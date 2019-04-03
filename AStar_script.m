@@ -2,7 +2,6 @@ clear;
 clc;
 clf;
 figure(1);
-hold on;
 map =[
 0	0	0	0	0	0	1	0	0	0	0	0	0	0	0	0	0
 0	0	0	0	0	0	1	0	0	0	0	0	0	0	0	0	0
