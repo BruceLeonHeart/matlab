@@ -39,18 +39,18 @@ closelen = 0;
 open = struct([]); 
 openlen = 0;
 
-%% ½«ÆğµãÌí¼Óµ½openÁĞ±í
+%% å°†èµ·ç‚¹æ·»åŠ åˆ°openåˆ—è¡¨
 open(1).row = start_px;
 open(1).col = start_py;
 open(1).g = 0;
-open(1).h = (end_py - start_py) + (end_px - start_px);
+open(1).h = abs(end_py - start_py) + abs(end_px - start_px);
 openlen = openlen + 1;
-%% ËÄÖÖÔË¶¯¸ñÊ½
+%% å››ç§è¿åŠ¨æ ¼å¼
 sport = [0,1;0,-1;-1,0;1,0];
 backNum = 0;
 prev = [];
 while openlen > 0
-    %% »ñÈ¡´ú¼Û×îĞ¡µÄÖµ
+    %% è·å–ä»£ä»·æœ€å°çš„å€¼
     for i = 1:openlen
         f(i,:) = [i,open(i).g + open(i).h];       
     end
@@ -58,7 +58,7 @@ while openlen > 0
     current = open(f1(1));
     choose = 0;
     chooseArr = [];
-    %% »ØËİ½«×ß¹ıµÄµã±ê¼Ç³öÀ´
+    %% å›æº¯å°†èµ°è¿‡çš„ç‚¹æ ‡è®°å‡ºæ¥
      if current.row == end_px && current.col == end_py
          i = 1;
          while(i<=size(prev,1))
@@ -93,6 +93,8 @@ while openlen > 0
             && current.row+sport(i,1)<=row && current.col+sport(i,2)<=col;
         neighbor.row = current.row + sport(i,1);
         neighbor.col = current.col + sport(i,2);
+        neighbor.g = abs(start_px - neighbor.row) + abs(start_py - neighbor.col);
+        neighbor.h = abs(end_px - neighbor.row) + abs(end_py - neighbor.col);
     
        
         if dimNormal
@@ -110,7 +112,8 @@ while openlen > 0
             if inCloseFlag
                 continue;
             end
-        
+            
+            temp_g = current.g + abs(current.row - neighbor.row) + abs(current.col - neighbor.col);
             inOpenFlag = 0;
             for j =1:openlen
                 if open(j).row == neighbor.row && open(j).col ==neighbor.col
@@ -123,12 +126,13 @@ while openlen > 0
                 open(openlen).row = neighbor.row;
                 open(openlen).col = neighbor.col;
                 open(openlen).g = abs(start_px - neighbor.row) + abs(start_py - neighbor.col);
-                open(openlen).h = abs(end_px - neighbor.row) + abs(end_py - neighbor.col);
+                open(openlen).h = abs(end_px - neighbor.row) + abs(end_py - neighbor.col);               
+            elseif temp_g >= neighbor.g
+                continue;
+            end
                 backNum = backNum +1;
                 prev(backNum,:) = [current.row ,current.col,neighbor.row ,neighbor.col];
-            else
-                continue;
-            end    
+                neighbor.g = temp_g;            
         else
             continue;
         end
