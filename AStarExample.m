@@ -2,24 +2,24 @@ function AstarExample()
 initMap2();
 end
 
-%% »æÖÆµØÍ¼³ÌĞò
+%% ç»˜åˆ¶åœ°å›¾ç¨‹åº
 function initMap()
 figure(2);
-format long; %16Î»ÓĞĞ§Êı×Ö
+format long; %16ä½æœ‰æ•ˆæ•°å­—
 hold on;
-axis equal; % x,y×ø±êÖá±ÈÀı³ß±£³ÖÒ»ÖÂ
-axis ([0 30 0 30]); %È¡ÖµÇø¼ä
+axis equal; % x,yåæ ‡è½´æ¯”ä¾‹å°ºä¿æŒä¸€è‡´
+axis ([0 30 0 30]); %å–å€¼åŒºé—´
 
 % set(gcf,'position',[left,top,width,height]);
-set(gca,'XTicklabel',0:1:30);%×ø±êÖá±êÇ©¿Ì¶È
+set(gca,'XTicklabel',0:1:30);%åæ ‡è½´æ ‡ç­¾åˆ»åº¦
 set(gca,'YTicklabel',0:1:30);
-set(gca,'XTick',0:1:30);%×ø±êÖáÎ»ÖÃ¿Ì¶È
+set(gca,'XTick',0:1:30);%åæ ‡è½´ä½ç½®åˆ»åº¦
 set(gca,'YTick',0:1:30)
 figure_x = [0 30 30 0 ];
 figure_y = [0 0  30 30 ];
 patch(figure_x,figure_y,'green');
-grid on; %Íø¸ñÏß
-%% ÕÏ°­Îï obstacle
+grid on; %ç½‘æ ¼çº¿
+%% éšœç¢ç‰© obstacle
 end
 
 function initMap2()
@@ -62,17 +62,17 @@ closelen = 0;
 open = struct([]); 
 openlen = 1;
 
-%% ½«ÆğµãÌí¼Óµ½openÁĞ±í
+%% å°†èµ·ç‚¹æ·»åŠ åˆ°openåˆ—è¡¨
 open(1).row = start_px;
 open(1).col = start_py;
 open(1).g = 0;
 open(1).h = (end_py - start_py) + (end_px - start_px);
 
-%% ËÄÖÖÔË¶¯¸ñÊ½
+%% å››ç§è¿åŠ¨æ ¼å¼
 sport = [0,1;0,-1;-1,0;1,0];
 
 while openlen > 0
-    %% »ñÈ¡´ú¼Û×îĞ¡µÄÖµ
+    %% è·å–ä»£ä»·æœ€å°çš„å€¼
     for i = 1:openlen
         f(i) = [i,open(i).g + open(i).h];       
     end
@@ -90,7 +90,7 @@ while openlen > 0
             return;
         end
         
-        if  map(current.row+sport(i,1),current.col+sport(i,2))~=1 %²»ÎªÕÏ°­Îï
+        if  map(current.row+sport(i,1),current.col+sport(i,2))~=1 %ä¸ä¸ºéšœç¢ç‰©
             openlen = openlen + 1;
             open(openlen).row = current.row+sport(i,1);
             open(openlen).col = current.col+sport(i,2);

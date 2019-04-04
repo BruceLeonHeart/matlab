@@ -78,7 +78,7 @@ while openlen > 0
          end
          figure(2);
          pcolor(map);
-         colormap winter;
+         colormap spring;
          return;         
      end
      closelen = closelen + 1;
@@ -132,7 +132,11 @@ while openlen > 0
             end
                 backNum = backNum +1;
                 prev(backNum,:) = [current.row ,current.col,neighbor.row ,neighbor.col];
-                neighbor.g = temp_g;            
+                neighbor.g = 
+  
+            
+            
+            
         else
             continue;
         end
