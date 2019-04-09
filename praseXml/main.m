@@ -1,6 +1,38 @@
 function  main()
-format long;
 
+   format long e;
+   x = 0.0;
+   y = 0.0;
+   t = 0.0;
+ for s =0.0 :1.0:300.0
+     
+        
+        [x,y,t] = spiral( s, 0.001, x, y, t );
+        fprintf( "x: %10.4f y:%10.4f \n", x, y );
+ end
+    
+    fprintf("#  done.\n" );
+
+end
+
+
+function [x,y,t] = spiral(s, cDot, x, y, t)
+    a = 1.0 / sqrt(abs(cDot ) );
+    a = a * sqrt(pi);
+    
+    [y,x] = fresnel( s / a, y, x );
+    x = x * a;
+    y = y * a;
+        
+    if  cDot < 0.0 
+        y =  -y;
+    end
+
+    t = s * s * cDot * 0.5;
+end
+
+function [ssa,cca] = fresnel(xxa,ssa,cca)
+format long;
 sn = [
     -2.99181919401019853726E3
      7.08840045257738576863E5
@@ -48,7 +80,7 @@ fn = [
       1.72010743268161828879E-13
       1.34283276233062758925E-16
       3.76329711269987889006E-20
-]
+];
 fd = [
       7.51586398353378947175E-1
       1.16888925859191382142E-1
@@ -88,13 +120,71 @@ gd =[
       8.39158816283118707363E-19
       1.86958710162783236342E-22
 ];
- for s =0.0 :1.0:300.0( s = 0.0; s < 300.0; s += 1.0 )
-     
-    {
-        odrSpiral( s, 0.001, &x, &y, &t );
-        fprintf( stderr, "%10.4f %10.4f \n", x, y );
-    }
-    fprintf( stderr, "#  done.\n" );
 
+    x = abs(xxa);
+    x2 = x.^2;
+    
+    if x2 < 2.5625
+        t = x2.^2;
+        [ans1,~] = polevl(t,sn(1),5);
+        [ans2,~] = p1evl(t,sd(1),6);
+        [ans3,~] = polevl(t,cn(1),5);
+        [ans4,~] = p1evl(t,cd(1),6);
+        ss = x*x2*ans1/ans2;
+        cc = x*ans3/ans4;
+    elseif x > 36974.0
+        cc = 0.5;
+        ss = 0.5;
+    else
+        x2 = x^2;
+        t = pi*x2;
+        u = 1.0 / (t.^2);
+        t = 1.0 / t;
+        [ans5,~] = polevl(t,fn(1),9);
+        [ans6,~] = p1evl(t,fd(1),10);
+        [ans7,~] = polevl(t,gn(1),10);
+        [ans8,~] = p1evl(t,gd(1),11);
+        f = 1.0 - u * ans5 / ans6;
+        g = t * ans7 / ans8;
+
+        t = pi * 0.5 * x2;
+        c = cos (t);
+        s = sin (t);
+        t = pi * x;
+        cc = 0.5 + (f * s - g * c) / t;
+        ss = 0.5 - (f * c + g * s) / t;
+    end
+    if xxa < 0.0
+        cc = -cc;
+        ss = -ss;
+    end
+    cca = cc;
+    ssa = ss;
+        
 end
 
+function [ans_1,coef] = polevl(x,coef,n)
+    ans_1 = coef;
+    coef = coef + 1;
+    i = n;
+    coef = coef + 1;
+    ans_1 = ans_1 * x + coef;
+    while(i)
+        coef = coef + 1;
+        ans_1 = ans_1 * x + coef;
+        i = i -1;
+    end
+end
+
+function [ans_2,coef] = p1evl(x,coef,n)
+    coef = coef + 1;
+    ans_2 = x + coef;
+    i =  n -1;
+    coef = coef + 1;
+    ans_2 = ans_2 * x + coef;
+    while(i)
+        coef = coef + 1;
+        ans_2 = ans_2 * x + coef;
+        i = i-1;
+    end
+end
