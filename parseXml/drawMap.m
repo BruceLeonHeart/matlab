@@ -95,7 +95,7 @@ while ~all(roadDrawFlag)
             for n = 0 :0.05:temp_length
                  arc_x = [arc_x temp_x + 1/abs(temp_c)*(cos(temp_hdg +n*temp_c ) - cos(temp_hdg))];
                  arc_y = [arc_y temp_y + 1/abs(temp_c)*(sin(temp_hdg +n*temp_c ) - sin(temp_hdg))];
-                 if temp_c > 0 %��ʱ��
+                 if temp_c > 0 
                     offset_arc_left_dx = -offset_left*cos(temp_hdg);
                     offset_arc_left_dy = -offset_left*sin(temp_hdg);
                     arc_x_left = [arc_x_left temp_x + (1/abs(temp_c) - offset_left)*(cos(temp_hdg +n*temp_c ) - cos(temp_hdg)) + offset_arc_left_dx];

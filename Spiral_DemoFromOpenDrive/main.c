@@ -44,7 +44,7 @@ int main( int argc, char** argv )
     for ( s = 0.0; s < 300.0; s += 1.0 )
     {
         odrSpiral( s, 0.001, &x, &y, &t );
-        fprintf( stderr, "%10.4f %10.4f \n", x, y );
+        fprintf( stderr, "%10.4f %10.4f %10.4f \n", x, y ,t);
     }
     fprintf( stderr, "#  done.\n" );
     
