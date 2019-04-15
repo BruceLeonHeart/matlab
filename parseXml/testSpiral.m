@@ -11,22 +11,14 @@ curvEnd = -1.2698412698412698e-01;
 delta =  curvEnd - curvStart;
 cDot = delta/length;
 curvFlag = sign(curvStart)&&sign(curvEnd);
-% if curvFlag
-%     t = hdg +pi/2;
-% else
-%     t = hdg +pi/2;
-% end
 temp_x = [];
 temp_y = [];
-% x = 0.0;
-% y = 0.0;
 x = 0.0;
 y = 0.0;
 t = 0.0;
-for i = 0:0.01:length
+for i = 0:0.001:length+0.001
     format long e;
     [x,y,t] = mspiral( i, cDot, x, y, t );
-%     fprintf( "x: %f y:%f \n", x, y );
     r  = sqrt(x^2 + y^2);
     x_new = x*cos(hdg) - y*sin(hdg);
     y_new = y*cos(hdg) + x*sin(hdg);

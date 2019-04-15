@@ -1,13 +1,10 @@
 function  main()
-
-
-
     x = 0.0;
     y = 0.0;
     t = 0.0;
    temp_x = [];
    temp_y = [];
- for s =0.0 :1.0:300.0      
+ for s =0.0 :1.0:299.0      
         [x,y,t] = mspiral( s, 0.001, x, y, t );
         fprintf( "x: %10.4f y:%10.4f t:%10.4f \n", x, y ,t);
         temp_x = [temp_x x];

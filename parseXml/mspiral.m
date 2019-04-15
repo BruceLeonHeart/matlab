@@ -123,10 +123,10 @@ gd =[
         t = pi*x2;
         u = 1.0 / (t.^2);
         t = 1.0 / t;
-        ans5 = polevl(t,fn,10);
-        ans6 = p1evl(t,fd,10);
-        ans7 = polevl(t,gn,11);
-        ans8 = p1evl(t,gd,11);
+        ans5 = polevl(u,fn,10);
+        ans6 = p1evl(u,fd,10);
+        ans7 = polevl(u,gn,11);
+        ans8 = p1evl(u,gd,11);
         f = 1.0 - u * ans5 / ans6;
         g = t * ans7 / ans8;
 
@@ -146,7 +146,8 @@ gd =[
         
 end
 
-function ans_1 = polevl(x,coef,n)   
+function ans_1 = polevl(x,coef,n)
+    
     ans_1 = coef(1);
     for i = 1:n-1
         ans_1 = ans_1 * x + coef(i+1);
