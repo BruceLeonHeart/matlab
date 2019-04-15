@@ -109,12 +109,8 @@ gd =[
     
     if x2 < 2.5625
         t = x2.^2;
-        ans1 = polevl(t,sn,6);
-        ans2 = p1evl(t,sd,6);
-        ans3 = polevl(t,cn,6);
-        ans4 = polevl(t,cd,7);
-        ss = x*x2*ans1/ans2;
-        cc = x*ans3/ans4;
+        ss = x * x2 * polevl(t,sn,6) / p1evl(t,sd,6);
+        cc = x * polevl(t,cn,6) / polevl(t,cd,7);
     elseif x > 36974.0
         cc = 0.5;
         ss = 0.5;
@@ -123,12 +119,8 @@ gd =[
         t = pi*x2;
         u = 1.0 / (t.^2);
         t = 1.0 / t;
-        ans5 = polevl(u,fn,10);
-        ans6 = p1evl(u,fd,10);
-        ans7 = polevl(u,gn,11);
-        ans8 = p1evl(u,gd,11);
-        f = 1.0 - u * ans5 / ans6;
-        g = t * ans7 / ans8;
+        f = 1.0 - u * polevl(u,fn,10) / p1evl(u,fd,10);
+        g = t * polevl(u,gn,11) / p1evl(u,gd,11);
 
         t = pi * 0.5 * x2;
         c = cos (t);
