@@ -140,17 +140,17 @@ while ~all(roadDrawFlag)
             t = 0.0;
             for i = 0:0.001:temp_length                
                 format long e;
-                [x,y,~] = mspiral( i, cDot, x, y, t );
+                [x,y,t] = mspiral( i, cDot, x, y, t );
                 r  = sqrt(x^2 + y^2);
                 x_new = x*cos(temp_hdg) - y*sin(temp_hdg);
                 y_new = y*cos(temp_hdg) + x*sin(temp_hdg);               
                 temp_x = [temp_x spiral_x+x_new];
                 temp_y = [temp_y spiral_y+y_new];
-                temp_x_right =  [temp_x_right spiral_x+x_new + offset_right*cos(temp_hdg_circle)];
-                temp_y_right =  [temp_y_right spiral_x+x_new + offset_right*sin(temp_hdg_circle)];
+                temp_x_right =  [temp_x_right spiral_x+x_new + offset_right*cos(temp_hdg_circle+t)];
+                temp_y_right =  [temp_y_right spiral_y+y_new + offset_right*sin(temp_hdg_circle+t)];
             end
             plot(temp_x,temp_y);
-            plot(temp_x_right,temp_y_right);              
+            plot(temp_x_right,temp_y_right);             
         end       
     end    
     roadDrawFlag(k) = 1;

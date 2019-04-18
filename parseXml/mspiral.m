@@ -1,16 +1,12 @@
 function [x,y,t] = mspiral(s, cDot, x, y, t)
-
     a = 1.0 / sqrt(abs(cDot ) );
-    a = a * sqrt(pi);
-    
+    a = a * sqrt(pi);    
     [y,x] = fresnel( s / a, y, x );
     x = x * a;
-    y = y * a;
-        
+    y = y * a;        
     if  cDot < 0.0 
         y =  -y;
     end
-
     t = s * s * cDot * 0.5;
 end
 
