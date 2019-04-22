@@ -40,8 +40,7 @@ while ~all(roadDrawFlag)
         if iscell(tempGeoList)
             temp_tempGeo = tempGeoList{m};
         end 
-        
-        
+               
         if isfield(temp_tempGeo,'line')
             line_x = str2double (temp_tempGeo.Attributes.x);
             line_y = str2double (temp_tempGeo.Attributes.y);
@@ -70,10 +69,9 @@ while ~all(roadDrawFlag)
             else
                 offset = str2double(temp_laneSection.right.lane(1).width.Attributes.a);
                 arcDraw(temp_x,temp_y,temp_hdg,temp_length,temp_c,offset,-1);   
-            end
-
-                        
+            end                
         end
+        
         if isfield(temp_tempGeo,'spiral')
             spiral_x = str2double (temp_tempGeo.Attributes.x);
             spiral_y = str2double (temp_tempGeo.Attributes.y);
