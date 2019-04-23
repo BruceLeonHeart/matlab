@@ -51,6 +51,18 @@
         plot(ss_new,curvs,'linestyle','-');
         hold on 
         plot(ss_new_1,curvs,'linestyle','-.');
+        
+        p1 = polyfit(ss,curvs,2);
+        p2 = polyfit(ss_new,curvs,2);
+        p3 = polyfit(ss_new_1,curvs,2);
+%         
+%         figure(3)
+%         % 曲率变化率
+%         plot(ss(1:end-1),diff(curvs),'linestyle','--');
+%         hold on 
+%         plot(ss_new(1:end-1),diff(curvs),'linestyle','-');
+%         hold on 
+%         plot(ss_new_1(1:end-1),diff(curvs),'linestyle','-.');
 
     for i= 1:n
         temp_s = i/n*mlength;
