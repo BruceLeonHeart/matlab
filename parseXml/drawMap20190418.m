@@ -1,6 +1,7 @@
-clc;
-close all;
-clear;
+
+% clc;
+% close all;
+% clear;
 fileObj = xml2struct('demo_prescan.xml');
 % fileObj = xml2struct('Crossing8Course.xml');
 % fileObj = xml2struct('MAP.xml');
@@ -12,12 +13,19 @@ for i = 1:roadNum
      q = str2double(roadObj{1,i}.link.successor.Attributes.elementId);
      linkedRoad(i,q) = 1;
 end
+% whos
 format long;
-map = figure('Name','mapViwer','color','green');
-figure(map);
-hold on
-axis([-180 180 -50 150]);
-axis equal;
+% app = evalin('base','app');
+% map = app.UIFigure;
+% figure(map);
+% figure(app.UIFigure);
+
+
+% map = figure('Name','mapViwer','color','green');
+% figure(map);
+% hold on
+% axis([-180 180 -50 150]);
+% axis equal;
 
 roadDrawFlag = zeros(1,roadNum);
 k = 1;
