@@ -11,4 +11,10 @@ while ~flg
     [x,y] = ginput(1);
     pointE = whichpoint(x,y);
     
+    if distanceMat(pointS,pointE) == 10000
+        f = warndlg('sry, it''s  a path , choose points again');
+        waitfor(f);
+    else
+        flg = 1;
+    end
 end

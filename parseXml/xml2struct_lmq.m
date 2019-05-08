@@ -26,7 +26,6 @@ function [ s ] = xml2struct_lmq( file )
         help xml2struct_lmq
         return
     end
-fprintf("chong2");
 %%
     if isa(file, 'org.apache.xerces.dom.DeferredDocumentImpl') || isa(file, 'org.apache.xerces.dom.DeferredElementImpl')
         % 输入是一个xml java对象
