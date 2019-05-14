@@ -9,6 +9,7 @@ if roadNum == 1
     roadParse(roadObj);
 else
     for i=1:roadNum
+        fprintf("curRoad: %d \n",i);
         roadParse(roadObj{1,i});
     end
 end
