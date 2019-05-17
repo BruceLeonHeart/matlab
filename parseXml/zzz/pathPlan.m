@@ -18,8 +18,7 @@ end
 
 
  
-for i = 1:roadNum
-    
+for i = 1:roadNum    
     if str2double(roadObj{1,i}.Attributes.junction) ~= -1
          q = str2double(roadObj{1,i}.link.successor.Attributes.elementId);
          linkedRoad(i,q) = 1;

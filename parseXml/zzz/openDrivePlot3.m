@@ -1,5 +1,5 @@
 
-function  openDrivePlot2(openDriveObj,ax1)
+function  openDrivePlot3(openDriveObj,ax1)
 global ax;
 ax = ax1;
 
@@ -22,24 +22,24 @@ function roadParse(mRoadObj)
     
     laneSectionList = mRoadObj.lanes.laneSection;
     laneSectionListSize = length(laneSectionList);
-    for i0 = 1:laneSectionListSize
-        if isstruct(laneSectionList)
-                temp_laneSection = laneSectionList(1);
-        end
-        if iscell(laneSectionList)
-                temp_laneSection = laneSectionList{1,i0};
-        end 
+    
         for m = 1:tempGeoListSize
             %工具里面的tempGeoList只有一种属性时，显示为结构体，其余属于cell
             if isstruct(tempGeoList)
                 temp_tempGeo = tempGeoList(1);
-                fprintf("hhaha \n");
             end
             if iscell(tempGeoList)
                 temp_tempGeo = tempGeoList{1,m};
-                fprintf("hello \n");
             end 
 
+            for i0 = 1:laneSectionListSize
+                if isstruct(laneSectionList)
+                        temp_laneSection = laneSectionList(1);
+                end
+                if iscell(laneSectionList)
+                        temp_laneSection = laneSectionList{1,i0};
+                end 
+        
             if isfield(temp_tempGeo,'line')
                 line_x = str2double (temp_tempGeo.Attributes.x);
                 line_y = str2double (temp_tempGeo.Attributes.y);
@@ -47,31 +47,40 @@ function roadParse(mRoadObj)
                 line_hdg = str2double(temp_tempGeo.Attributes.hdg);
                 lineDraw(line_x,line_y,line_hdg,temp_length,0.0,0);
                 if isfield(temp_laneSection,'left')
-                    leftLineList = temp_laneSection.left.lane;
-                    for i =1:length(leftLineList)
-                        if length(leftLineList) ==1
-                            curLane = leftLineList(1);
-                        else
-                            curLane = leftLineList{1,i};
+                    lanes = temp_laneSection.left.lane;
+                    if isstruct(lanes)
+                        offset = str2double(temp_laneSection.left.lane(1).width.Attributes.a);
+                        lineDraw(line_x,line_y,line_hdg,temp_length,offset,1);                
+                    else
+                        for zz1 = 1:length(lanes)
+                            if temp_laneSection.left.lane{1,zz1}.Attributes.type == "driving"
+                                curLane = lanes{1,zz1};
+                                break;
+                            end
                         end
-                        
                         offset = str2double(curLane.width.Attributes.a);
                         lineDraw(line_x,line_y,line_hdg,temp_length,offset,1);
                     end
-                else
-                    rightLineList = temp_laneSection.right.lane;
-                    for i =1:length(rightLineList)
-                        if length(rightLineList) ==1
-                            curLane = rightLineList(1);
-                        else
-                            curLane = rightLineList{1,i};
-                        end
-                        fprintf("line No:%f \n",i);
-                        offset = str2double(curLane.width.Attributes.a);
-                        lineDraw(line_x,line_y,line_hdg,temp_length,offset,-1);    
-                    end
                 end
-            end 
+               if isfield(temp_laneSection,'right')
+                    lanes = temp_laneSection.right.lane;
+
+                    if isstruct(lanes)
+                        offset = str2double(lanes(1).width.Attributes.a);
+                        lineDraw(line_x,line_y,line_hdg,temp_length,offset,-1);                
+                    else
+                        for zz1 = 1:length(lanes)
+                            if temp_laneSection.right.lane{1,zz1}.Attributes.type == "driving"
+                                curLane = lanes{1,zz1};
+                                break;
+                            end
+                        end
+                        offset = str2double(curLane.width.Attributes.a);
+                        lineDraw(line_x,line_y,line_hdg,temp_length,offset,-1);
+                    end
+                        
+                end 
+            end
 
             if isfield(temp_tempGeo,'arc')
                 temp_c = str2double (temp_tempGeo.arc.Attributes.curvature);
@@ -80,29 +89,39 @@ function roadParse(mRoadObj)
                 temp_y = str2double (temp_tempGeo.Attributes.y);
                 temp_length = str2double (temp_tempGeo.Attributes.length);
                 arcDraw(temp_x,temp_y,temp_hdg,temp_length,temp_c,0.0,0)
-                if isfield(temp_laneSection,'left')
-                     leftLineList = temp_laneSection.left.lane;
-                      for i =1:length(leftLineList)
-                        if length(leftLineList) ==1
-                            curLane = leftLineList(1);
-                        else
-                            curLane = leftLineList{1,i};
-                        end
-                        offset = str2double(curLane.width.Attributes.a);
-                        arcDraw(temp_x,temp_y,temp_hdg,temp_length,temp_c,offset,1);
-                      end
+                 if isfield(temp_laneSection,'left')
+                 lanes = temp_laneSection.left.lane;
+                if isstruct(lanes)
+                    offset = str2double(temp_laneSection.left.lane(1).width.Attributes.a);
+                    arcDraw(temp_x,temp_y,temp_hdg,temp_length,temp_c,offset,1);              
                 else
-                    rightLineList = temp_laneSection.right.lane;
-                    for i =1:length(rightLineList)
-                        if length(rightLineList) ==1
-                            curLane = rightLineList(1);
-                        else
-                            curLane = rightLineList{1,i};
+                    for zz1 = 1:length(lanes)
+                        if temp_laneSection.left.lane{1,zz1}.Attributes.type == "driving"
+                            curLane = lanes{1,zz1};
+                            break;
                         end
-                        offset = str2double(curLane.width.Attributes.a);
-                        arcDraw(temp_x,temp_y,temp_hdg,temp_length,temp_c,offset,-1);   
                     end
-                end                
+                    offset = str2double(curLane.width.Attributes.a);
+                    arcDraw(temp_x,temp_y,temp_hdg,temp_length,temp_c,offset,1);
+                end
+                 end
+           if isfield(temp_laneSection,'right')
+                lanes = temp_laneSection.right.lane;
+                
+                if isstruct(lanes)
+                    offset = str2double(lanes(1).width.Attributes.a);
+                    arcDraw(temp_x,temp_y,temp_hdg,temp_length,temp_c,offset,-1);                
+                else
+                    for zz1 = 1:length(lanes)
+                        if temp_laneSection.right.lane{1,zz1}.Attributes.type == "driving"
+                            curLane = lanes{1,zz1};
+                            break;
+                        end
+                    end
+                    offset = str2double(curLane.width.Attributes.a);
+                     arcDraw(temp_x,temp_y,temp_hdg,temp_length,temp_c,offset,-1); 
+                end
+            end                 
             end
 
             if isfield(temp_tempGeo,'spiral')
@@ -113,29 +132,41 @@ function roadParse(mRoadObj)
                 curv_start = str2double (temp_tempGeo.spiral.Attributes.curvStart);
                 curv_end = str2double (temp_tempGeo.spiral.Attributes.curvEnd);            
                 spiralDraw(spiral_x,spiral_y,temp_hdg,temp_length,curv_start,curv_end,0.0,0);
-                if isfield(temp_laneSection,'left')
-                     leftLineList = temp_laneSection.left.lane;
-                      for i =1:length(leftLineList)
-                        if length(leftLineList) ==1
-                            curLane = leftLineList(1);
-                        else
-                            curLane = leftLineList{1,i};
-                        end
-                        offset = str2double(curLane.width.Attributes.a);
-                        spiralDraw(spiral_x,spiral_y,temp_hdg,temp_length,curv_start,curv_end,offset,1);
-                      end
+                    if isfield(temp_laneSection,'left')
+                
+                lanes = temp_laneSection.left.lane;
+                if isstruct(lanes)
+                    offset = str2double(temp_laneSection.left.lane(1).width.Attributes.a);
+                    spiralDraw(spiral_x,spiral_y,temp_hdg,temp_length,curv_start,curv_end,offset,1);           
                 else
-                    rightLineList = temp_laneSection.right.lane;
-                    for i =1:length(rightLineList)
-                        if length(rightLineList) ==1
-                            curLane = rightLineList(1);
-                        else
-                            curLane = rightLineList{1,i};
+                    for zz1 = 1:length(lanes)
+                        if temp_laneSection.left.lane{1,zz1}.Attributes.type == "driving"
+                            curLane = lanes{1,zz1};
+                            break;
                         end
-                        offset = str2double(curLane.width.Attributes.a);
-                        spiralDraw(spiral_x,spiral_y,temp_hdg,temp_length,curv_start,curv_end,offset,-1);
                     end
+                    offset = str2double(curLane.width.Attributes.a);
+                    spiralDraw(spiral_x,spiral_y,temp_hdg,temp_length,curv_start,curv_end,offset,1);
                 end
+                    end
+                
+            if isfield(temp_laneSection,'right')
+                 lanes = temp_laneSection.right.lane;
+                
+                if isstruct(lanes)
+                    offset = str2double(lanes(1).width.Attributes.a);
+                   spiralDraw(spiral_x,spiral_y,temp_hdg,temp_length,curv_start,curv_end,offset,-1);             
+                else
+                    for zz1 = 1:length(lanes)
+                        if temp_laneSection.right.lane{1,zz1}.Attributes.type == "driving"
+                            curLane = lanes{1,zz1};
+                            break;
+                        end
+                    end
+                    offset = str2double(curLane.width.Attributes.a);
+                     spiralDraw(spiral_x,spiral_y,temp_hdg,temp_length,curv_start,curv_end,offset,-1);
+                end
+            end
 
             end 
         end
@@ -276,30 +307,23 @@ function  lineDraw(x,y,hdg,mlength,offset,laneFlag)
         %% 原始参考线
          if laneFlag == 0
             line(ax,[x,x+dx],[y,y+dy],'linestyle','--','color','k');  
-           [x_s,y_s] =  normOne(x,y);
-           [x_e,y_e] =  normOne(x + dx/2,y + dy/2);
-           annotation(gcf,'arrow',[x_s,x_e],[y_s,y_e]); % 建立从(x(1), y(1))到(x(2), y(2))的箭头注释对象。
-           
-%              arrowPlot1([x,x+dx],[y,y+dy],'Linestyle','--','color','k','number',5);
+            quiver(ax,x,y,dx/2,dy/2,'linestyle','--');
+
         %% 右侧 基于s方向顺时针旋转
          elseif laneFlag == -1 
             x = x + offset*cos(hdg-pi/2);
             y = y + offset*sin(hdg-pi/2);
             line(ax,[x,x+dx],[y,y+dy]);
-           [x_s,y_s] =  normOne(x,y);
-           [x_e,y_e] =  normOne(x + dx/2,y + dy/2);
-           annotation('arrow',[x_s,x_e],[y_s,y_e]); % 建立从(x(1), y(1))到(x(2), y(2))的箭头注释对象。
-            
-%              arrowPlot1(ax,[x,x+dx],[y,y+dy],'number',5);
+
+            quiver(ax,x,y,dx/2,dy/2);
+
         %% 左侧 基于s方向逆时针旋转
          else 
             x = x + offset*cos(hdg+pi/2);
             y = y + offset*sin(hdg+pi/2);
             line(ax,[x,x+dx],[y,y+dy]);
-           [x_s,y_s] =  normOne(x,y);
-           [x_e,y_e] =  normOne(x + dx/2,y + dy/2);
-           annotation('arrow',[x_s,x_e],[y_s,y_e]); % 建立从(x(1), y(1))到(x(2), y(2))的箭头注释对象。
-%              arrowPlot1(ax,[x,x+dx],[y,y+dy],'number',5);
+            quiver(ax,x,y,dx/2,dy/2);
+
          end
 end
 

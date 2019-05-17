@@ -1,5 +1,5 @@
 
-function  openDrivePlot2(openDriveObj,ax1)
+function  openDrivePlot3(openDriveObj,ax1)
 global ax;
 ax = ax1;
 
@@ -33,11 +33,9 @@ function roadParse(mRoadObj)
             %工具里面的tempGeoList只有一种属性时，显示为结构体，其余属于cell
             if isstruct(tempGeoList)
                 temp_tempGeo = tempGeoList(1);
-                fprintf("hhaha \n");
             end
             if iscell(tempGeoList)
                 temp_tempGeo = tempGeoList{1,m};
-                fprintf("hello \n");
             end 
 
             if isfield(temp_tempGeo,'line')
@@ -66,7 +64,6 @@ function roadParse(mRoadObj)
                         else
                             curLane = rightLineList{1,i};
                         end
-                        fprintf("line No:%f \n",i);
                         offset = str2double(curLane.width.Attributes.a);
                         lineDraw(line_x,line_y,line_hdg,temp_length,offset,-1);    
                     end
@@ -276,30 +273,23 @@ function  lineDraw(x,y,hdg,mlength,offset,laneFlag)
         %% 原始参考线
          if laneFlag == 0
             line(ax,[x,x+dx],[y,y+dy],'linestyle','--','color','k');  
-           [x_s,y_s] =  normOne(x,y);
-           [x_e,y_e] =  normOne(x + dx/2,y + dy/2);
-           annotation(gcf,'arrow',[x_s,x_e],[y_s,y_e]); % 建立从(x(1), y(1))到(x(2), y(2))的箭头注释对象。
-           
-%              arrowPlot1([x,x+dx],[y,y+dy],'Linestyle','--','color','k','number',5);
+            quiver(ax,x,y,dx/2,dy/2,'linestyle','--');
+
         %% 右侧 基于s方向顺时针旋转
          elseif laneFlag == -1 
             x = x + offset*cos(hdg-pi/2);
             y = y + offset*sin(hdg-pi/2);
             line(ax,[x,x+dx],[y,y+dy]);
-           [x_s,y_s] =  normOne(x,y);
-           [x_e,y_e] =  normOne(x + dx/2,y + dy/2);
-           annotation('arrow',[x_s,x_e],[y_s,y_e]); % 建立从(x(1), y(1))到(x(2), y(2))的箭头注释对象。
-            
-%              arrowPlot1(ax,[x,x+dx],[y,y+dy],'number',5);
+
+            quiver(ax,x,y,dx/2,dy/2);
+
         %% 左侧 基于s方向逆时针旋转
          else 
             x = x + offset*cos(hdg+pi/2);
             y = y + offset*sin(hdg+pi/2);
             line(ax,[x,x+dx],[y,y+dy]);
-           [x_s,y_s] =  normOne(x,y);
-           [x_e,y_e] =  normOne(x + dx/2,y + dy/2);
-           annotation('arrow',[x_s,x_e],[y_s,y_e]); % 建立从(x(1), y(1))到(x(2), y(2))的箭头注释对象。
-%              arrowPlot1(ax,[x,x+dx],[y,y+dy],'number',5);
+            quiver(ax,x,y,dx/2,dy/2);
+
          end
 end
 

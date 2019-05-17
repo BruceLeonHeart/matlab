@@ -2,7 +2,7 @@
 % clc;
 % close all;
 % clear;
-fileObj = xml2struct('demo_prescan.xml');
+fileObj = xml2struct('demomap.xml');
 % fileObj = xml2struct('Crossing8Course.xml');
 % fileObj = xml2struct('MAP.xml');
 openDriveObj = fileObj.OpenDRIVE;
@@ -21,11 +21,11 @@ format long;
 % figure(app.UIFigure);
 
 
-% map = figure('Name','mapViwer','color','green');
-% figure(map);
-% hold on
+map = figure('Name','mapViwer','color','green');
+figure(map);
+hold on
 % axis([-180 180 -50 150]);
-% axis equal;
+axis equal;
 
 roadDrawFlag = zeros(1,roadNum);
 k = 1;
@@ -56,11 +56,37 @@ while ~all(roadDrawFlag)
             line_hdg = str2double(temp_tempGeo.Attributes.hdg);
             lineDraw(line_x,line_y,line_hdg,temp_length,0.0,0);
             if isfield(temp_laneSection,'left')
-                offset = str2double(temp_laneSection.left.lane(1).width.Attributes.a);
-                lineDraw(line_x,line_y,line_hdg,temp_length,offset,1);
+                lanes = temp_laneSection.left.lane;
+                if isstruct(lanes)
+                    offset = str2double(temp_laneSection.left.lane(1).width.Attributes.a);
+                    lineDraw(line_x,line_y,line_hdg,temp_length,offset,1);                
+                else
+                    for zz1 = 1:length(lanes)
+                        if temp_laneSection.left.lane{1,zz1}.Attributes.type == "driving"
+                            curLane = lanes{1,zz1};
+                            break;
+                        end
+                    end
+                    offset = str2double(curLane.width.Attributes.a);
+                    lineDraw(line_x,line_y,line_hdg,temp_length,offset,1);
+                end
             else
-                offset = str2double(temp_laneSection.right.lane(1).width.Attributes.a);
-                lineDraw(line_x,line_y,line_hdg,temp_length,offset,-1);    
+                lanes = temp_laneSection.right.lane;
+                
+                if isstruct(lanes)
+                    offset = str2double(lanes(1).width.Attributes.a);
+                    lineDraw(line_x,line_y,line_hdg,temp_length,offset,-1);                
+                else
+                    for zz1 = 1:length(lanes)
+                        if temp_laneSection.right.lane{1,zz1}.Attributes.type == "driving"
+                            curLane = lanes{1,zz1};
+                            break;
+                        end
+                    end
+                    offset = str2double(curLane.width.Attributes.a);
+                    lineDraw(line_x,line_y,line_hdg,temp_length,offset,-1);
+                end
+ 
             end
         end
                
@@ -72,11 +98,36 @@ while ~all(roadDrawFlag)
             temp_length = str2double (temp_tempGeo.Attributes.length);
             arcDraw(temp_x,temp_y,temp_hdg,temp_length,temp_c,0.0,0)
             if isfield(temp_laneSection,'left')
-                offset = str2double(temp_laneSection.left.lane(1).width.Attributes.a);
-                arcDraw(temp_x,temp_y,temp_hdg,temp_length,temp_c,offset,1);
+                 lanes = temp_laneSection.left.lane;
+                if isstruct(lanes)
+                    offset = str2double(temp_laneSection.left.lane(1).width.Attributes.a);
+                    arcDraw(temp_x,temp_y,temp_hdg,temp_length,temp_c,offset,1);              
+                else
+                    for zz1 = 1:length(lanes)
+                        if temp_laneSection.left.lane{1,zz1}.Attributes.type == "driving"
+                            curLane = lanes{1,zz1};
+                            break;
+                        end
+                    end
+                    offset = str2double(curLane.width.Attributes.a);
+                    arcDraw(temp_x,temp_y,temp_hdg,temp_length,temp_c,offset,1);
+                end
             else
-                offset = str2double(temp_laneSection.right.lane(1).width.Attributes.a);
-                arcDraw(temp_x,temp_y,temp_hdg,temp_length,temp_c,offset,-1);   
+                lanes = temp_laneSection.right.lane;
+                
+                if isstruct(lanes)
+                    offset = str2double(lanes(1).width.Attributes.a);
+                    arcDraw(temp_x,temp_y,temp_hdg,temp_length,temp_c,offset,-1);                
+                else
+                    for zz1 = 1:length(lanes)
+                        if temp_laneSection.right.lane{1,zz1}.Attributes.type == "driving"
+                            curLane = lanes{1,zz1};
+                            break;
+                        end
+                    end
+                    offset = str2double(curLane.width.Attributes.a);
+                     arcDraw(temp_x,temp_y,temp_hdg,temp_length,temp_c,offset,-1); 
+                end
             end                
         end
         
@@ -89,11 +140,38 @@ while ~all(roadDrawFlag)
             curv_end = str2double (temp_tempGeo.spiral.Attributes.curvEnd);            
             spiralDraw(spiral_x,spiral_y,temp_hdg,temp_length,curv_start,curv_end,0.0,0);
             if isfield(temp_laneSection,'left')
-                offset = str2double(temp_laneSection.left.lane(1).width.Attributes.a);
-                spiralDraw(spiral_x,spiral_y,temp_hdg,temp_length,curv_start,curv_end,offset,1);
+                
+                lanes = temp_laneSection.left.lane;
+                if isstruct(lanes)
+                    offset = str2double(temp_laneSection.left.lane(1).width.Attributes.a);
+                    spiralDraw(spiral_x,spiral_y,temp_hdg,temp_length,curv_start,curv_end,offset,1);           
+                else
+                    for zz1 = 1:length(lanes)
+                        if temp_laneSection.left.lane{1,zz1}.Attributes.type == "driving"
+                            curLane = lanes{1,zz1};
+                            break;
+                        end
+                    end
+                    offset = str2double(curLane.width.Attributes.a);
+                    spiralDraw(spiral_x,spiral_y,temp_hdg,temp_length,curv_start,curv_end,offset,1);
+                end
+                
             else
-                offset = str2double(temp_laneSection.right.lane(1).width.Attributes.a);
-                spiralDraw(spiral_x,spiral_y,temp_hdg,temp_length,curv_start,curv_end,offset,-1);
+                 lanes = temp_laneSection.right.lane;
+                
+                if isstruct(lanes)
+                    offset = str2double(lanes(1).width.Attributes.a);
+                   spiralDraw(spiral_x,spiral_y,temp_hdg,temp_length,curv_start,curv_end,offset,-1);             
+                else
+                    for zz1 = 1:length(lanes)
+                        if temp_laneSection.right.lane{1,zz1}.Attributes.type == "driving"
+                            curLane = lanes{1,zz1};
+                            break;
+                        end
+                    end
+                    offset = str2double(curLane.width.Attributes.a);
+                     spiralDraw(spiral_x,spiral_y,temp_hdg,temp_length,curv_start,curv_end,offset,-1);
+                end
             end
              
         end       
