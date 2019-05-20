@@ -1,12 +1,12 @@
-function pathPlan1(startPoint,endPoint,ax1)
+function path = pathPlan1(startPoint,endPoint,ax1)
     global ax;
     ax = ax1;
     startPoint
     endPoint
-    
-    
-      line(ax,[startPoint.Roadx,startPoint.x_end],[startPoint.Roady,startPoint.y_end],'lineWidth',15,'color','g');  
-      line(ax,[endPoint.x_start,endPoint.Roadx],[endPoint.y_start,endPoint.Roady],'lineWidth',10,'color','r');  
+    %考虑到生成路线过程中，会不停的生成plot/line对象
+      path = [];
+      path(length(path) +1) = line(ax,[startPoint.Roadx,startPoint.x_end],[startPoint.Roady,startPoint.y_end],'lineWidth',15,'color','g');  
+      path(length(path) +1) = line(ax,[endPoint.x_start,endPoint.Roadx],[endPoint.y_start,endPoint.Roady],'lineWidth',10,'color','r');  
       
     % 如果终点落在起点的前方，则将快速结束路径搜索过程
     if (startPoint.RoadNum == endPoint.RoadNum) && (startPoint.GeoNum == endPoint.GeoNum) && (startPoint.LaneNum == endPoint.LaneNum)

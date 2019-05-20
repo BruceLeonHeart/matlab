@@ -9,6 +9,7 @@ if roadNum == 1
     roadParse(roadObj);
 else
     for i=1:roadNum
+%         for i=1:1
         fprintf("curRoad: %d \n",i);
         roadParse(roadObj{1,i});
     end
@@ -322,7 +323,7 @@ function  lineDraw(x,y,hdg,mlength,offset,laneFlag)
             x = x + offset*cos(hdg+pi/2);
             y = y + offset*sin(hdg+pi/2);
             line(ax,[x,x+dx],[y,y+dy]);
-            quiver(ax,x,y,dx/2,dy/2);
+            quiver(ax,x+dx,y+dy,-dx/2,-dy/2);
 
          end
 end
