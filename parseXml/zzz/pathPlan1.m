@@ -4,29 +4,30 @@ function path = pathPlan1(startPoint,endPoint,ax1)
     startPoint
     endPoint
     %考虑到生成路线过程中，会不停的生成plot/line对象
+%    可用属性    
+%       Roadx: 1100
+%       Roady: 303.7500
+%     RoadNum: 2
+%      GeoNum: 1
+%     LaneNum: -1
+%         hdg: 3.1416
+%     x_start: 1150
+%     y_start: 303.7500
+%       x_end: 950
+%       y_end: 303.7500
       path = [];
-      path(length(path) +1) = line(ax,[startPoint.Roadx,startPoint.x_end],[startPoint.Roady,startPoint.y_end],'lineWidth',15,'color','g');  
-      path(length(path) +1) = line(ax,[endPoint.x_start,endPoint.Roadx],[endPoint.y_start,endPoint.Roady],'lineWidth',10,'color','r');  
-      
-    % 如果终点落在起点的前方，则将快速结束路径搜索过程
-    if (startPoint.RoadNum == endPoint.RoadNum) && (startPoint.GeoNum == endPoint.GeoNum) && (startPoint.LaneNum == endPoint.LaneNum)
-        dis =  sqrt ( (endPoint.Roadx  - startPoint.Roadx).^2 + (endPoint.Roady - startPoint.Roady).^2 );
-        flg1 = ( (endPoint.Roadx - startPoint.Roadx) == dis*cos(startPoint.hdg*startPoint.LaneNum));
-        flg2 = ( (endPoint.Roady - startPoint.Roady) == dis*sin(startPoint.hdg*startPoint.LaneNum));
-        if flg1&&flg2
-%             lineDraw(startPoint.x_start,startPoint.y_start,startPoint.hdg,abs(dis),1.5,startPoint.LaneNum);
-            %起点绘制至所在Lane终点处
-               line(ax,[startPoint.Roadx,startPoint.x_end],[startPoint.Roady,startPoint.y_end],'lineWidth',15,'color','g');  
-               quiver(ax,startPoint.Roadx,startPoint.Roady,(startPoint.x_end - startPoint.Roadx)/2,(startPoint.y_end - startPoint.Roady)/2,'linestyle','--');
-%             lineDraw(startPoint.x_start,startPoint.y_start,startPoint.hdg,abs(dis),1.5,startPoint.LaneNum);
-        %Lane起点绘制至终点处
-            line(ax,[endPoint.x_start,endPoint.Roadx],[endPoint.y_start,endPoint.Roady],'lineWidth',10,'color','r');  
-            quiver(ax,endPoint.x_start,endPoint.y_start,(endPoint.Roadx - endPoint.x_start)/2,(endPoint.Roady - endPoint.y_start)/2,'linestyle','--');
-        end      
-    end
-
-fprintf("%f \n",startPoint.Roadx);
-fprintf("%f",endPoint.Roadx);
+%       path(length(path) +1) = line(ax,[startPoint.Roadx,startPoint.x_end],[startPoint.Roady,startPoint.y_end],'lineWidth',15,'color','g');  
+%       path(length(path) +1) = line(ax,[endPoint.x_start,endPoint.Roadx],[endPoint.y_start,endPoint.Roady],'lineWidth',10,'color','r');  
+%       
+      open = {};
+      open{1} = start;
+      while(~isempty(open))
+          if isPointOnSegment(startPoint.Roadx,startPoint.Roady,startPoint.x_end,startPoint.y_end,endPoint.Roadx,endPoint.Roady)
+              path(length(path) +1) = line(ax,[startPoint.Roadx,endPoint.Roadx],[endPoint.Roadx,endPoint.Roady],'lineWidth',10,'color','b');
+          end       
+      end
+% fprintf("%f \n",startPoint.Roadx);
+% fprintf("%f",endPoint.Roadx);
 % function  pathPlan() 
 % fileObj = xml2struct('demo_prescan.xml');
 % openDriveObj = fileObj.OpenDRIVE;
@@ -199,4 +200,19 @@ function  arcDraw(x,y,hdg,mlength,curvature,offset,laneFlag)
 %         arrowPlot1(ax,xs,ys,'number',5);
 
     end
+end
+
+%% 判断点C是否落在线段AB上
+function flag = isPointOnSegment(A_x,A_y,B_x,B_y,C_x,C_y)
+    flag = 0;
+    if (A_x - C_x) * (B_y - C_y) == (A_y - C_y) * (B_x - C_x) %在直线上
+        min_x = min(A_x,B_x);
+        max_x = max(A_x,B_x);
+        min_y = min(A_y,B_y);
+        max_y = max(A_y,B_y);
+        if C_x >= min_x && C_x <= max_x && C_y >= min_y && C_y <= max_y
+            flag = 1;
+        end
+    end
+    
 end
