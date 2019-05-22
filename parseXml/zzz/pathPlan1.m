@@ -1,8 +1,78 @@
-function path = pathPlan1(startPoint,endPoint,ax1)
+function path = pathPlan1(startPoint,endPoint,ax1,openDriveObj)
     global ax;
     ax = ax1;
     startPoint
     endPoint
+    
+    %% 解析　openDriveObj
+%     roadStruct = struct([]);
+%     roads = openDriveObj.road;
+%     id = 1;
+%     for i1 = 1 : length(roads)
+%         currentRoad = roads{1,i1};
+%         Geos = currentRoad.planView.geometry;       
+%         laneSections = currentRoad.lanes.laneSection;
+%         for i2 = 1 : length(Geos)
+%             if length(Geos) ==1
+%                 currentGeo = Geos(1);
+%             else
+%                 currentGeo = Geos{1,i2};
+%             end
+%             x_s = str2double(currentGeo.Attributes.x);
+%             y_s = str2double(currentGeo.Attributes.y);
+%             hdg_s = str2double(currentGeo.Attributes.hdg);
+%             s_length = str2double(currentGeo.Attributes.length);
+%            
+%               
+%             
+%             for i3 = 1:length(laneSections)
+%                 
+%               
+%             
+%                 if length(laneSections) ==1
+%                     currentlane = laneSections(1);
+%                 else
+%                     currentlane = laneSections{1,i3};
+%                 end
+%                 
+%                 
+%                 
+%                 if isfield(currentGeo,'line')  %长度维持
+%                     s = s_length;
+%                     if isfield(currentlane,'left')
+% 
+%                     roadStruct
+%                     end
+%                 end
+% 
+%                 if isfield(currentGeo,'spiral') %考虑到openEd特性　直接赋值０
+%                     s = 0;
+%                 end
+% 
+%                 if isfield(currentGeo,'arc') %长度缩放
+% 
+%                     s = 
+%                 end
+%                 
+%                 
+%                 
+%                 
+%             end
+%         end      
+%     end
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     %考虑到生成路线过程中，会不停的生成plot/line对象
 %    可用属性    
 %       Roadx: 1100
@@ -15,17 +85,55 @@ function path = pathPlan1(startPoint,endPoint,ax1)
 %     y_start: 303.7500
 %       x_end: 950
 %       y_end: 303.7500
-      path = [];
+      path = [];  % record for final path
 %       path(length(path) +1) = line(ax,[startPoint.Roadx,startPoint.x_end],[startPoint.Roady,startPoint.y_end],'lineWidth',15,'color','g');  
 %       path(length(path) +1) = line(ax,[endPoint.x_start,endPoint.Roadx],[endPoint.y_start,endPoint.Roady],'lineWidth',10,'color','r');  
 %       
-      open = {};
-      open{1} = start;
-      while(~isempty(open))
-          if isPointOnSegment(startPoint.Roadx,startPoint.Roady,startPoint.x_end,startPoint.y_end,endPoint.Roadx,endPoint.Roady)
-              path(length(path) +1) = line(ax,[startPoint.Roadx,endPoint.Roadx],[endPoint.Roadx,endPoint.Roady],'lineWidth',10,'color','b');
-          end       
-      end
+
+       %% A star Algo
+       
+       roads = openDriveObj.road;
+       junctions = openDriveObj.junction;
+       closelen = 0 ;
+       close = struct([]);
+       openlen = 0;
+       open = struct([]);
+       
+       
+       % add 1st item
+       openlen = openlen + 1;
+       open(1).x = startPoint.x_end; %final x
+       open(1).y = startPoint.y_end; %final y
+       open(1).g = getDis(startPoint.x_end,startPoint.y_end,startPoint.Roadx,startPoint.Roady);
+       open(1).h = getDis(startPoint.x_end,startPoint.y_end,endPoint.Roadx,endPoint.Roady);
+       open(1).f = open(1).g + open(1).h;
+       open(1).RoadNum = startPoint.RoadNum;
+       open(1).GeoNum = startPoint.GeoNum;
+       open(1).LaneNum = startPoint.LaneNum;
+       
+       while openlen > 0
+           for i = 1:openlen
+               f(i) = [i , open(i).f];
+           end
+           f = sortrows(f,2);
+           current = open(f(1,1));
+           
+           
+       end
+%       open = {};
+%       i = 1;
+%       open{1} = startPoint;
+%       while(i <= length(open)  &&  ~isempty(open{i}) )          
+%           if isPointOnSegment(startPoint.Roadx,startPoint.Roady,startPoint.x_end,startPoint.y_end,endPoint.Roadx,endPoint.Roady)
+%               fprintf("jack...");
+%               path(length(path) +1) = line(ax,[startPoint.Roadx,endPoint.Roadx],[startPoint.Roady,endPoint.Roady],'lineWidth',5,'color','b');
+%               open{i} = [];
+%               i = i -1;
+%               break;
+%           end
+%           i = i + 1;
+%       end
+      path
 % fprintf("%f \n",startPoint.Roadx);
 % fprintf("%f",endPoint.Roadx);
 % function  pathPlan() 
@@ -215,4 +323,87 @@ function flag = isPointOnSegment(A_x,A_y,B_x,B_y,C_x,C_y)
         end
     end
     
+end
+
+%%　两点间欧氏距离
+function dis = getDis(x1,y1,x2,y2)
+    a = [x1 ,y1];
+    b = [x2 ,y2];
+    dis = norm(a-b);    
+end
+
+%% 邻居捕捉
+function getNeighbor(roads,junctions,roadNum)
+    %　邻居信息矩阵
+    NeighborMsg = []; %三列，分别记录Road,Geo,Num
+    
+    currentRoad = roads{1,roadNum};
+    if isfield(currentRoad,'link')
+        mlink = currentRoad.link;
+        %　暂时不做前继节点的操作
+%         if isfield(mlink,'predecessor')
+%             mpredecessor = mlink.predecessor;
+%             if mpredecessor.Attributes.elementType == "junction"
+%                 junctionId = str2double(mpredecessor.Attributes.elementId);
+%                 for i = 1:length(junctions)
+%                     if length(junctions) ==1
+%                         mjunction = junctions(1);
+%                     else
+%                         mjunction = junctions{1,i};
+%                     end
+%                     if str2double(mjuntion.Attributes.id) == junctionId
+%                         %...                       
+%                         break;
+%                     end
+%                     
+%                 end
+%                 
+%             else  %road
+%             end
+%         end
+        
+        %关注后续节点       
+        if isfield(mlink,'successor')
+            msuccessor = mlink.successor;
+            if msuccessor.Attributes.elementType == "junction"
+                junctionId = str2double(msuccessor.Attributes.elementId);
+                for i = 1:length(junctions)
+                    if length(junctions) ==1
+                        mjunction = junctions(1);
+                    else
+                        mjunction = junctions{1,i};
+                    end
+                    if str2double(mjuntion.Attributes.id) == junctionId
+                        connections = mjunction.connection;
+                        if length(connections) ==1
+                            mconnection = junctions(1);
+                        else
+                            mconnection = junctions{1,i};
+                        end
+                        
+                        
+                        
+                        
+                        break;
+                    end
+                    
+                end
+                
+            else  %road
+            end
+        end
+        
+        
+        
+    end
+
+
+end
+%%　通过Road,Geo,Lane获取相关信息
+
+%% 从道路中获取下一段Lane
+function getLaneFromRoad
+end
+%% 从junction中获取下一点Lane
+function getLaneFromJunction
 end

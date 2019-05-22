@@ -12,6 +12,7 @@ function  [point,cache] = pointBelongs1(openDriveObj,pointX,pointY,ax)
 
         if roadObj{1,i}.Attributes.junction == "-1"
             tempGeometryList = roadObj{1,i}.planView.geometry;
+            currentRoadNum = str2double(roadObj{1,i}.Attributes.id);
             f = length(tempGeometryList);
             for j = 1:f
                 if f == 1 
@@ -68,7 +69,9 @@ function  [point,cache] = pointBelongs1(openDriveObj,pointX,pointY,ax)
                         continue;
                     end
                     k = k + 1;
-                    disList(k,:) = [abs(v),x,y,i,j,rotateFlg,hdg,x_start,y_start,x_end,y_end];
+%                     disList(k,:) = [abs(v),x,y,i,j,rotateFlg,hdg,x_start,y_start,x_end,y_end];
+                    disList(k,:) = [abs(v),x,y,currentRoadNum,j,rotateFlg,hdg,x_start,y_start,x_end,y_end];
+                    
                 end              
             end          
         end    

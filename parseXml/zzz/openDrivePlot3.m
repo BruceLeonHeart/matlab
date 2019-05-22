@@ -10,7 +10,7 @@ if roadNum == 1
 else
     for i=1:roadNum
 %         for i=1:1
-        fprintf("curRoad: %d \n",i);
+        fprintf("curRoad: %d \n",str2double(roadObj{1,i}.Attributes.id));
         roadParse(roadObj{1,i});
     end
 end
