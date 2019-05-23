@@ -1,6 +1,11 @@
 function path = pathPlan1(startPoint,endPoint,ax1,openDriveObj)
     global ax;
     ax = ax1;
+    
+    global roads;
+    global junctions;          
+    roads = openDriveObj.road;
+    junctions = openDriveObj.junction;
     startPoint
     endPoint
     
@@ -91,9 +96,7 @@ function path = pathPlan1(startPoint,endPoint,ax1,openDriveObj)
 %       
 
        %% A star Algo
-       
-       roads = openDriveObj.road;
-       junctions = openDriveObj.junction;
+
        closelen = 0 ;
        close = struct([]);
        openlen = 0;
@@ -113,10 +116,31 @@ function path = pathPlan1(startPoint,endPoint,ax1,openDriveObj)
        
        while openlen > 0
            for i = 1:openlen
-               f(i) = [i , open(i).f];
+               f(i,:) = [i , open(i).f];
            end
            f = sortrows(f,2);
            current = open(f(1,1));
+           %% 回溯路径过程并将轨迹进行打印
+           closelen = closelen + 1;
+           close(closelen).RoadNum = current.RoadNum;
+           close(closelen).GeoNum = current.GeoNum;
+           close(closelen).LaneNum = current.LaneNum;
+           open(f(1,1)) =[];
+           openlen = openlen -1;
+           NeighborMsg = getNeighbor(current.RoadNum,current.GeoNum,current.LaneNum);
+           for k = 1 : length(NeighborMsg)
+               currentNeighbor = NeighborMsg(k,:);
+               neighbor.RoadNum =  currentNeighbor(1);
+               neighbor.GeoNum =  currentNeighbor(2);
+               neighbor.LaneNum =  currentNeighbor(3);
+               LineMsg = getLineMsg(neighbor.RoadNum,neighbor.GeoNum);
+               neighbor.g = current.g + LineMsg.mlength;
+               
+           end
+           
+           
+            
+           
            
            
        end
@@ -325,7 +349,7 @@ function flag = isPointOnSegment(A_x,A_y,B_x,B_y,C_x,C_y)
     
 end
 
-%%　两点间欧氏距离
+%% 两点间欧氏距离
 function dis = getDis(x1,y1,x2,y2)
     a = [x1 ,y1];
     b = [x2 ,y2];
@@ -333,14 +357,21 @@ function dis = getDis(x1,y1,x2,y2)
 end
 
 %% 邻居捕捉
-function getNeighbor(roads,junctions,roadNum)
+function NeighborMsg = getNeighbor(RoadNum,GeoNum,LaneNum)
     %　邻居信息矩阵
     NeighborMsg = []; %三列，分别记录Road,Geo,Num
+    global roads;
+    global junctions; 
+    currentRoad = roads{1,RoadNum};
     
-    currentRoad = roads{1,roadNum};
+    %当前车道的下一段
+
     if isfield(currentRoad,'link')
         mlink = currentRoad.link;
         %　暂时不做前继节点的操作
+        if isfield(mlink,'predecessor')
+            mpredecessor = mlink.predecessor;
+        end
 %         if isfield(mlink,'predecessor')
 %             mpredecessor = mlink.predecessor;
 %             if mpredecessor.Attributes.elementType == "junction"
@@ -375,31 +406,129 @@ function getNeighbor(roads,junctions,roadNum)
                     end
                     if str2double(mjuntion.Attributes.id) == junctionId
                         connections = mjunction.connection;
-                        if length(connections) ==1
-                            mconnection = junctions(1);
-                        else
-                            mconnection = junctions{1,i};
+                        for i1 = 1 :length(connections)
+                            if length(connections) ==1
+                                mconnection = connections(1);
+                            else
+                                mconnection = connections{1,i};
+                            end
+                            if str2double(mconnection.Attributes.incomingRoad) == RoadNum
+                                mlaneLinks = mconnection.laneLink;
+                                for i2 = 1:length(mlaneLinks)
+                                    if length(mlaneLinks) ==1 
+                                        mlaneLink = mlaneLinks(1);
+                                    else
+                                        mlaneLink = mlaneLinks{1,i2};
+                                    end
+                                    if str2double(mlaneLink.Attributes.from)==LaneNum
+                                        resLaneNum = str2double(mlaneLink.Attributes.to);
+                                        break;
+                                    end
+                                end
+                                resRoadNum = str2double(mconnection.Attributes.connectingRoad);                           
+                                if mconnection.Attributes.incomingRoad == "start"
+                                    resGeoNum = 1;
+                                else
+                                    resGeoNum = length(roads{1,resRoadNum}.planView.geometry);
+                                end  
+                                NeighborMsg(length(NeighborMsg)+1,:) = [resRoadNum,resGeoNum,resLaneNum];                               
+                                continue;
+                            end     
                         end
-                        
-                        
-                        
-                        
                         break;
+                    end 
+                end  
+            else  %road
+                currentGeo = currentRoad.planView.geometry;
+                if GeoNum == length(currentGeo)
+                    %处于最后一段LaneSection（包含仅有一段Geo的情况）
+                    if sign(LaneNum) == -1
+                    %LaneNum为负，参考线右侧，但与参考线同向，下一车道处于下一Road
+                        resRoadNum = str2double(msuccessor.Attributes.elementId);
+                        if msuccessor.Attributes.contactPoint == "start"
+                            resGeoNum = 1;
+                            resLaneNum = -1;
+                        else
+                            resGeoNum = length(roads{1,resRoadNum}.planView.geometry);
+                            resLaneNum = 1;
+                        end
+                        NeighborMsg(length(NeighborMsg)+1,:) = [resRoadNum,resGeoNum,resLaneNum]; 
+                    else
+                    %LaneNum为正，参考线左侧，与参考线反向，下一车道处于上一Road
+                        resRoadNum = str2double(mpredecessor.Attributes.elementId);
+                        if msuccessor.Attributes.contactPoint == "start"
+                            resGeoNum = 1;
+                            resLaneNum = 1;
+                        else
+                            resGeoNum = length(roads{1,resRoadNum}.planView.geometry);
+                            resLaneNum = -1;
+                        end
+                        NeighborMsg(length(NeighborMsg)+1,:) = [resRoadNum,resGeoNum,resLaneNum]; 
                     end
                     
-                end
-                
-            else  %road
+                                       
+                else 
+                    %　处于中间时的处理方式
+                    resRoadNum = RoadNum;
+                    resGeoNum = GeoNum +1;
+                    resLaneNum = LaneNum;
+                    NeighborMsg(length(NeighborMsg)+1,:) = [resRoadNum,resGeoNum,resLaneNum]; 
+                end  
             end
-        end
-        
-        
-        
+        end       
     end
 
-
 end
-%%　通过Road,Geo,Lane获取相关信息
+%%　通过 Road,Geo,Lane获取相关信息
+function LineMsg = getLineMsg(RoadNum,GeoNum)
+    global roads;
+    for i =1:length(roads)
+        if str2double(roads{1,i}.Attributes.id) == RoadNum
+            Geos = roads{1,i}.planView.geometry;
+            for j = 1:length(Geos)
+                if length(Geos) == 1
+                    currentGeo = Geos(1);
+                else
+                    currentGeo = Geos{1,j};
+                end  
+                if j == GeoNum
+                LineMsg.s = str2double(currentGeo.Attributes.s);
+                LineMsg.x = str2double(currentGeo.Attributes.x);
+                LineMsg.y = str2double(currentGeo.Attributes.y);
+                LineMsg.hdg = str2double(currentGeo.Attributes.hdg);
+                LineMsg.mlength = str2double(currentGeo.Attributes.length);
+                if isfield(currentGeo,'line')
+                    LineMsg.linetype = 'line';
+                end
+                
+                if isfield(currentGeo,'spiral')
+                    LineMsg.linetype = 'spiral';
+                    LineMsg.curvStart = str2double(currentGeo.spiral.Attributes.curvStart);
+                    LineMsg.curvEnd = str2double(currentGeo.spiral.Attributes.curvEnd);
+                end
+                if isfield(currentGeo,'arc')
+                    LineMsg.linetype = 'arc';
+                    LineMsg.curvature = str2double(currentGeo.spiral.Attributes.curvEnd);
+                end
+                    break;
+                end
+            end
+            break;
+        end
+    end
+    
+end
+%% 直线通过起点计算终点坐标
+function [x_f,y_f] = getLineFinalXY(x,y,hdg,laneFlag)
+end
+%% 圆弧通过起点计算终点坐标
+function [x_f,y_f] = getArcFinalXY(x,y,hdg,laneFlag)
+end
+%% 螺旋线通过起点计算终点坐标
+function [x_f,y_f] = getSpiralFinalXY(x,y,hdg,laneFlag)
+end
+
+
 
 %% 从道路中获取下一段Lane
 function getLaneFromRoad
