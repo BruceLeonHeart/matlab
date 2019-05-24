@@ -114,6 +114,10 @@ function path = pathPlan1(startPoint,endPoint,ax1,openDriveObj)
        open(1).GeoNum = startPoint.GeoNum;
        open(1).LaneNum = startPoint.LaneNum;
        
+       backNum = 0;
+       prev = [];
+       choose = 0;
+       chooseArr = [];
        while openlen > 0
            for i = 1:openlen
                f(i,:) = [i , open(i).f];
@@ -121,6 +125,44 @@ function path = pathPlan1(startPoint,endPoint,ax1,openDriveObj)
            f = sortrows(f,2);
            current = open(f(1,1));
            %% 回溯路径过程并将轨迹进行打印
+           
+           if isPointOnSegment(startPoint.Roadx,startPoint.Roady,startPoint.x_end,startPoint.y_end,endPoint.Roadx,endPoint.Roady)
+               path(length(path) +1) = line(ax,[startPoint.Roadx,endPoint.Roadx],[startPoint.Roady,endPoint.Roady],'lineWidth',5,'color','b');
+               return;
+           end
+           if current.RoadNum == endPoint.RoadNum && current.GeoNum == endPoint.GeoNum && current.LaneNum == endPoint.LaneNum 
+               zzr =1;
+               while(zzr <= size(prev,1))
+                   if prev(zzr,4) == current.RoadNum && prev(zzr,5) == current.RoadNum && prev(zzr,6) ==  current.RoadNum
+                       choose = choose +1;
+                       chooseArr(choose,:) = prev(zzr,1:3);
+                       current.RoadNum = prev(zzr,1);
+                       current.RoadNum = prev(zzr,2);
+                       current.RoadNum = prev(zzr,3);
+                   else
+                       i = i + 1;
+                   end
+               end
+               
+               path(length(path) +1) = line(ax,[startPoint.Roadx,startPoint.x_end],[startPoint.Roady,startPoint.y_end],'lineWidth',5,'color','b');
+               for zzm = 2:size(chooseArr,1)-1
+                   mLineMsg = getLineMsg(chooseArr(zzm,1),chooseArr(zzm,2),chooseArr(zzm,3));
+                   if mLineMsg.type == "spiral"
+                        path(length(path) +1) = spiralDraw1(mLineMsg.x,mLineMsg.y,mLineMsg.hdg,mLineMsg.mlength,mLineMsg.curvStart,mLineMsg.curvEnd,mLineMsg.offset,sign(chooseArr(zzm,3)));
+                   elseif mLineMsg.type == "arc"
+                        path(length(path) +1) = arcDraw1(mLineMsg.x,mLineMsg.y,mLineMsg.hdg,mLineMsg.mlength,mLineMsg.curvature,mLineMsg.offset,sign(chooseArr(zzm,3)));
+                   elseif mLineMsg.type == "line"
+                        path(length(path) +1) = lineDraw1(mLineMsg.x,mLineMsg.y,mLineMsg.hdg,mLineMsg.mlength,mLineMsg.offset,sign(chooseArr(zzm,3)));
+                   end
+               end
+               path(length(path) +1) = line(ax,[endPoint.x_start,endPoint.Roadx],[endPoint.y_start,endPoint.Roady],'lineWidth',5,'color','b');
+               return;
+          end
+               
+           
+           
+           
+           
            closelen = closelen + 1;
            close(closelen).RoadNum = current.RoadNum;
            close(closelen).GeoNum = current.GeoNum;
@@ -133,16 +175,63 @@ function path = pathPlan1(startPoint,endPoint,ax1,openDriveObj)
                neighbor.RoadNum =  currentNeighbor(1);
                neighbor.GeoNum =  currentNeighbor(2);
                neighbor.LaneNum =  currentNeighbor(3);
-               LineMsg = getLineMsg(neighbor.RoadNum,neighbor.GeoNum);
+               LineMsg = getLineMsg(neighbor.RoadNum,neighbor.GeoNum,neighbor.LaneNum);
                neighbor.g = current.g + LineMsg.mlength;
+               if LineMsg.type == "spiral"
+                    [x_f,y_f] = getSpiralFinalXY(LineMsg.x,LineMsg.y,LineMsg.hdg,LineMsg.mlength,LineMsg.curvStart,LineMsg.curvEnd,LineMsg.offset,sign(neighbor.LaneNum));
+               elseif LineMsg.type == "arc"
+                    [x_f,y_f] = getArcFinalXY(LineMsg.x,LineMsg.y,LineMsg.hdg,LineMsg.mlength,LineMsg.curvature,LineMsg.offset,sign(neighbor.LaneNum));
+               elseif LineMsg.type == "line"
+                    [x_f,y_f] = getLineFinalXY(LineMsg.x,LineMsg.y,LineMsg.hdg,LineMsg.mlength,LineMsg.offset,sign(neighbor.LaneNum));
+               end
+               neighbor.h = getDis(x_f,y_f,endPoint.Roadx,endPoint.Roady);
+               neighbor.f = neighbor.g + neighbor.h;
                
-           end
-           
-           
-            
-           
-           
-           
+               inCloseFlag =0 ;
+               
+               if closelen ==0
+               else
+                   for m = 1 :closelen
+                       if close(m).RoadNum == neighbor.RoadNum &&close(m).GeoNum == neighbor.GeoNum && close(m).LaneNum == neighbor.LaneNum
+                           inCloseFlag = 1 ;
+                           break;
+                       end
+                   end
+               end
+               
+               if inCloseFlag
+                   continue;
+               end
+               
+               temp_g =  current.g  + LineMsg.mlength;
+               inOpenFlag = 0;
+               for p = 1:openlen
+                   if open(m).RoadNum == neighbor.RoadNum &&open(m).GeoNum == neighbor.GeoNum && open(m).LaneNum == neighbor.LaneNum
+                           inOpenFlag = 1 ;
+                           gscore = open(m).g;
+                           break;
+                   end   
+               end
+                
+               if ~inOpenFlag
+                   openlen = openlen + 1;
+                   open(openlen).RoadNum = neighbor.RoadNum;
+                   open(openlen).GeoNum = neighbor.GeoNum;
+                   open(openlen).LaneNum = neighbor.LaneNum;
+                   open(openlen).x = x_f;
+                   open(openlen).y = y_f;
+                   open(openlen).g = neighbor.g;
+                   open(openlen).h = neighbor.h;
+                   open(openlen).f = neighbor.f;
+               elseif temp_g >= gscore
+                   continue;
+               else
+                   backNum = backNum+1;
+                   prev(backNum,:) = [current.RoadNum,current.GeoNum,current.LaneNum,neighbor.RoadNum,neighbor.GeoNum,neighbor.LaneNum];
+                   neighbor.g = temp_g;
+                   neighbor.f = neighbor.g + neighbor.h;
+               end
+           end          
        end
 %       open = {};
 %       i = 1;
@@ -157,7 +246,7 @@ function path = pathPlan1(startPoint,endPoint,ax1,openDriveObj)
 %           end
 %           i = i + 1;
 %       end
-      path
+%       path
 % fprintf("%f \n",startPoint.Roadx);
 % fprintf("%f",endPoint.Roadx);
 % function  pathPlan() 
@@ -190,7 +279,7 @@ end
 % end
 
 %% 绘制螺旋线
- function spiralDraw(x_start,y_start,hdg,mlength,curvstart,curvEnd,offset,laneFlag)  
+ function spiralDraw1(x_start,y_start,hdg,mlength,curvstart,curvEnd,offset,laneFlag)  
     global ax;
     n = 100;
     xs = zeros(1,n);
@@ -213,7 +302,7 @@ end
             xs(i) = xs(i) + offset*cos(hdg + curvstart*temp_s + c * temp_s.^2/2.0 -pi/2);
             ys(i) = ys(i) + offset*sin(hdg + curvstart*temp_s + c * temp_s.^2/2.0 -pi/2);
         end
-        plot(ax,xs,ys);
+        plot(ax,xs,ys,'lineWidth',5,'color','b');
 %          arrowPlot1(ax,xs,ys,'number',5);
     %% 左侧 
     else
@@ -222,14 +311,14 @@ end
             xs(i) = xs(i) + offset*cos(hdg + curvstart*temp_s + c * temp_s.^2/2.0 +pi/2);
             ys(i) = ys(i) + offset*sin(hdg + curvstart*temp_s + c * temp_s.^2/2.0 +pi/2);
         end
-        plot(ax,xs,ys);
+        plot(ax,xs,ys,'lineWidth',5,'color','b');
 %          arrowPlot1(ax,xs,ys,'number',5);
 
     end
  end
  
 %% 绘制直线
-function  lineDraw(x,y,hdg,mlength,offset,laneFlag) 
+function  lineDraw1(x,y,hdg,mlength,offset,laneFlag) 
      global ax;
      % 沿着s方向的偏移量
      dx = mlength * cos(hdg);
@@ -243,7 +332,7 @@ function  lineDraw(x,y,hdg,mlength,offset,laneFlag)
      elseif laneFlag == -1 
         x = x + offset*cos(hdg-pi/2);
         y = y + offset*sin(hdg-pi/2);
-        line(ax,[x,x+dx],[y,y+dy]);
+        line(ax,[x,x+dx],[y,y+dy],'lineWidth',5,'color','b');
 
         quiver(ax,x,y,dx/2,dy/2);
 
@@ -251,14 +340,14 @@ function  lineDraw(x,y,hdg,mlength,offset,laneFlag)
      else 
         x = x + offset*cos(hdg+pi/2);
         y = y + offset*sin(hdg+pi/2);
-        line(ax,[x,x+dx],[y,y+dy]);
+        line(ax,[x,x+dx],[y,y+dy],'lineWidth',5,'color','b');
         quiver(ax,x,y,dx/2,dy/2);
 
      end
 end
 
 %% 绘制圆弧
-function  arcDraw(x,y,hdg,mlength,curvature,offset,laneFlag)
+function  arcDraw1(x,y,hdg,mlength,curvature,offset,laneFlag)
     global ax;
     if laneFlag == 0
         n = 100;
@@ -300,9 +389,7 @@ function  arcDraw(x,y,hdg,mlength,curvature,offset,laneFlag)
             ys(i) = integral(sinline,t(1),t(i)) + y;
         end
 %         arrowPlot1(ax,xs,ys,'number',5);
-        plot(ax,xs,ys);
-
-        
+        plot(ax,xs,ys,'lineWidth',5,'color','b');      
     %% 左侧
     else
         % 修改起始位置
@@ -328,7 +415,7 @@ function  arcDraw(x,y,hdg,mlength,curvature,offset,laneFlag)
             xs(i) = integral(cosline,t(1),t(i)) + x;
             ys(i) = integral(sinline,t(1),t(i)) + y;
         end
-        plot(ax,xs,ys);
+        plot(ax,xs,ys,'lineWidth',5,'color','b');
 %         arrowPlot1(ax,xs,ys,'number',5);
 
     end
@@ -480,7 +567,7 @@ function NeighborMsg = getNeighbor(RoadNum,GeoNum,LaneNum)
 
 end
 %%　通过 Road,Geo,Lane获取相关信息
-function LineMsg = getLineMsg(RoadNum,GeoNum)
+function LineMsg = getLineMsg(RoadNum,GeoNum,LaneNum)
     global roads;
     for i =1:length(roads)
         if str2double(roads{1,i}.Attributes.id) == RoadNum
@@ -513,26 +600,142 @@ function LineMsg = getLineMsg(RoadNum,GeoNum)
                     break;
                 end
             end
+            
+            LaneSections = roads{1,i}.lanes.laneSection;
+            if sign(LaneNum) == -1
+                lanes = LaneSections.right.lane;
+            end
+            if sign(LaneNum) == 1
+                lanes = LaneSections.left.lane;
+            end
+            for k = 1:length(lanes)
+                if length(lanes) == 1
+                    crtlane = lanes(1);
+                else
+                    crtlane = lanes{1,k};
+                end
+                
+                if str2double(crtlane.Attributes.id) == LaneNum
+                    LineMsg.offset = str2double(crtlane.width.Attributes.a);
+                    break;
+                end
+            end
+            
+            
+            
+            
+            
             break;
         end
     end
     
 end
 %% 直线通过起点计算终点坐标
-function [x_f,y_f] = getLineFinalXY(x,y,hdg,laneFlag)
+function [x_f,y_f] = getLineFinalXY(x,y,hdg,mlength,offset,laneFlag)
+     dx = mlength * cos(hdg);
+     dy = mlength * sin(hdg);
+    %% 原始参考线
+     if laneFlag == 0
+        x_f = x + dx;
+        y_f = y + dy;
+
+    %% 右侧 基于s方向顺时针旋转
+     elseif laneFlag == -1 
+        x = x + offset*cos(hdg-pi/2);
+        y = y + offset*sin(hdg-pi/2);
+        x_f = x + dx;
+        y_f = y + dy;
+    %% 左侧 基于s方向逆时针旋转
+     else 
+        x = x + offset*cos(hdg+pi/2);
+        y = y + offset*sin(hdg+pi/2);
+        x_f = x + dx;
+        y_f = y + dy;
+
+     end
+
+
 end
 %% 圆弧通过起点计算终点坐标
-function [x_f,y_f] = getArcFinalXY(x,y,hdg,laneFlag)
+function [x_f,y_f] = getArcFinalXY(x,y,hdg,mlength,curvature,offset,laneFlag)
+    origin_r = abs(1/curvature); %起始圆半径
+    if laneFlag == 0 %原始
+        if curvature <= 0
+            theta = hdg + pi/2;
+            delta_theta = mlength/origin_r;
+            x_f = x + origin_r*(cos(theta-delta_theta) - cos(theta));
+            y_f = y + origin_r*(sin(theta-delta_theta) - sin(theta));
+        else
+            theta = hdg - pi/2;
+            delta_theta = mlength/origin_r;
+            x_f = x + origin_r*(cos(theta+delta_theta) - cos(theta));
+            y_f = y + origin_r*(sin(theta+delta_theta) - sin(theta));
+        end
+    elseif laneFlag == -1% right
+        % 修改起始位置
+         
+        x = x + offset*cos(hdg-pi/2);
+        y = y + offset*sin(hdg-pi/2);
+        %顺时针时，右侧的圆半径减小;逆时针时，右侧的圆半径增大
+        if curvature <= 0
+            current_r = origin_r -offset;
+            theta = hdg + pi/2;
+            delta_theta = mlength/origin_r;
+            x_f = x + current_r*(cos(theta-delta_theta) - cos(theta));
+            y_f = y + current_r*(sin(theta-delta_theta) - sin(theta));
+            
+        else
+            current_r = origin_r +offset;
+            theta = hdg - pi/2;
+            delta_theta = mlength/origin_r;
+            x_f = x + current_r*(cos(theta+delta_theta) - cos(theta));
+            y_f = y + current_r*(sin(theta+delta_theta) - sin(theta));
+        end
+       
+    else %left
+         % 修改起始位置
+ 
+        x = x + offset*cos(hdg+pi/2);
+        y = y + offset*sin(hdg+pi/2);
+        %顺时针时，左侧的圆半径增大;逆时针时，左侧的圆半径减小
+        if curvature <= 0
+            current_r = origin_r + offset;
+            theta = hdg + pi/2;
+            delta_theta = mlength/origin_r;
+            x_f = x + current_r*(cos(theta-delta_theta) - cos(theta));
+            y_f = y + current_r*(sin(theta-delta_theta) - sin(theta));
+        else
+            current_r = origin_r - offset;
+            theta = hdg - pi/2;
+            delta_theta = mlength/origin_r;
+            x_f = x + current_r*(cos(theta+delta_theta) - cos(theta));
+            y_f = y + current_r*(sin(theta+delta_theta) - sin(theta));
+        end
+        
+    end
 end
+
 %% 螺旋线通过起点计算终点坐标
-function [x_f,y_f] = getSpiralFinalXY(x,y,hdg,laneFlag)
+function [x_f,y_f] = getSpiralFinalXY(x,y,hdg,mlength,cvstart,cvend,offset,laneFlag)
+%     n = 100;
+%     xs = zeros(1,n);
+%     ys = zeros(1,n);
+%     t = linspace(0,mlength,n);
+    c = (cvend - cvstart)/mlength;
+    cosline = @(mlength)(cos(hdg + cvstart * mlength + c/2.0*mlength.^2));
+    sinline = @(mlength)(sin(hdg + cvstart * mlength + c/2.0*mlength.^2));
+    x_f = x + integral(cosline,0,mlength);
+    y_f = y + integral(sinline,0,mlength);
+    if laneFlag == 0
+      
+    elseif laneFlag == -1
+        x_f = x_f + offset*cos(hdg + cvstart * mlength + c/2.0*mlength.^2 -pi/2);
+        y_f = y_f + offset*sin(hdg + cvstart * mlength + c/2.0*mlength.^2 -pi/2);
+    else
+        x_f = x_f + offset*cos(hdg + cvstart * mlength + c/2.0*mlength.^2 +pi/2);
+        y_f = y_f + offset*sin(hdg + cvstart * mlength + c/2.0*mlength.^2 +pi/2);
+    end
+    
 end
 
 
-
-%% 从道路中获取下一段Lane
-function getLaneFromRoad
-end
-%% 从junction中获取下一点Lane
-function getLaneFromJunction
-end
