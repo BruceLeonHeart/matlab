@@ -135,12 +135,12 @@ function pathList = pathPlan1(startPoint,endPoint,ax1,openDriveObj)
            if current.RoadNum == endPoint.RoadNum && current.GeoNum == endPoint.GeoNum && current.LaneNum == endPoint.LaneNum 
                zzr =1;
                while(zzr <= size(prev,1))
-                   if prev(zzr,4) == current.RoadNum && prev(zzr,5) == current.RoadNum && prev(zzr,6) ==  current.RoadNum
+                   if prev(zzr,4) == current.RoadNum && prev(zzr,5) == current.GeoNum && prev(zzr,6) ==  current.LaneNum
                        choose = choose +1;
                        chooseArr(choose,:) = prev(zzr,1:3);
                        current.RoadNum = prev(zzr,1);
-                       current.RoadNum = prev(zzr,2);
-                       current.RoadNum = prev(zzr,3);
+                       current.GeoNum = prev(zzr,2);
+                       current.LaneNum = prev(zzr,3);
                        zzr = 1;
                    else
                        zzr = zzr + 1;
@@ -148,13 +148,13 @@ function pathList = pathPlan1(startPoint,endPoint,ax1,openDriveObj)
                end
                
                pathList(length(pathList) +1) = line(ax,[startPoint.Roadx,startPoint.x_end],[startPoint.Roady,startPoint.y_end],'lineWidth',5,'color','b');
-               for zzm = 2:size(chooseArr,1)-1
+               for zzm = 1:size(chooseArr,1)-1
                    mLineMsg = getLineMsg(chooseArr(zzm,1),chooseArr(zzm,2),chooseArr(zzm,3));
-                   if mLineMsg.type == "spiral"
+                   if mLineMsg.linetype == "spiral"
                         pathList(length(pathList) +1) = spiralDraw1(mLineMsg.x,mLineMsg.y,mLineMsg.hdg,mLineMsg.mlength,mLineMsg.curvStart,mLineMsg.curvEnd,mLineMsg.offset,sign(chooseArr(zzm,3)));
-                   elseif mLineMsg.type == "arc"
+                   elseif mLineMsg.linetype == "arc"
                         pathList(length(pathList) +1) = arcDraw1(mLineMsg.x,mLineMsg.y,mLineMsg.hdg,mLineMsg.mlength,mLineMsg.curvature,mLineMsg.offset,sign(chooseArr(zzm,3)));
-                   elseif mLineMsg.type == "line"
+                   elseif mLineMsg.linetype == "line"
                         pathList(length(pathList) +1) = lineDraw1(mLineMsg.x,mLineMsg.y,mLineMsg.hdg,mLineMsg.mlength,mLineMsg.offset,sign(chooseArr(zzm,3)));
                    end
                end
@@ -170,7 +170,7 @@ function pathList = pathPlan1(startPoint,endPoint,ax1,openDriveObj)
            close(closelen).RoadNum = current.RoadNum;
            close(closelen).GeoNum = current.GeoNum;
            close(closelen).LaneNum = current.LaneNum;
-           open(f(1,1)) =[];
+           open(f1(1,1)) =[];
            openlen = openlen -1;
            NeighborMsg = getNeighbor(current.RoadNum,current.GeoNum,current.LaneNum);
            for k = 1 : size(NeighborMsg,1)
@@ -283,7 +283,7 @@ end
 % end
 
 %% 绘制螺旋线
- function spiralDraw1(x_start,y_start,hdg,mlength,curvstart,curvEnd,offset,laneFlag)  
+ function handle = spiralDraw1(x_start,y_start,hdg,mlength,curvstart,curvEnd,offset,laneFlag)  
     global ax;
     n = 100;
     xs = zeros(1,n);
@@ -297,7 +297,7 @@ end
         ys(i) = integral(sinline,t(1),t(i)) + y_start;
     end
     if laneFlag==0    
-        plot(ax,xs,ys,'linestyle','--');
+       handle = plot(ax,xs,ys,'linestyle','--');
 %          arrowPlot1(ax,xs,ys,'linestyle','--','number',5);
     %% 右侧
     elseif laneFlag == -1
@@ -306,7 +306,7 @@ end
             xs(i) = xs(i) + offset*cos(hdg + curvstart*temp_s + c * temp_s.^2/2.0 -pi/2);
             ys(i) = ys(i) + offset*sin(hdg + curvstart*temp_s + c * temp_s.^2/2.0 -pi/2);
         end
-        plot(ax,xs,ys,'lineWidth',5,'color','b');
+        handle = plot(ax,xs,ys,'lineWidth',5,'color','b');
 %          arrowPlot1(ax,xs,ys,'number',5);
     %% 左侧 
     else
@@ -315,28 +315,28 @@ end
             xs(i) = xs(i) + offset*cos(hdg + curvstart*temp_s + c * temp_s.^2/2.0 +pi/2);
             ys(i) = ys(i) + offset*sin(hdg + curvstart*temp_s + c * temp_s.^2/2.0 +pi/2);
         end
-        plot(ax,xs,ys,'lineWidth',5,'color','b');
+       handle = plot(ax,xs,ys,'lineWidth',5,'color','b');
 %          arrowPlot1(ax,xs,ys,'number',5);
 
     end
  end
  
 %% 绘制直线
-function  lineDraw1(x,y,hdg,mlength,offset,laneFlag) 
+function  handle = lineDraw1(x,y,hdg,mlength,offset,laneFlag) 
      global ax;
      % 沿着s方向的偏移量
      dx = mlength * cos(hdg);
      dy = mlength * sin(hdg);
     %% 原始参考线
      if laneFlag == 0
-        line(ax,[x,x+dx],[y,y+dy],'linestyle','--','color','k');  
+        handle = line(ax,[x,x+dx],[y,y+dy],'linestyle','--','color','k');  
         quiver(ax,x,y,dx/2,dy/2,'linestyle','--');
 
     %% 右侧 基于s方向顺时针旋转
      elseif laneFlag == -1 
         x = x + offset*cos(hdg-pi/2);
         y = y + offset*sin(hdg-pi/2);
-        line(ax,[x,x+dx],[y,y+dy],'lineWidth',5,'color','b');
+        handle = line(ax,[x,x+dx],[y,y+dy],'lineWidth',5,'color','b');
 
         quiver(ax,x,y,dx/2,dy/2);
 
@@ -344,14 +344,14 @@ function  lineDraw1(x,y,hdg,mlength,offset,laneFlag)
      else 
         x = x + offset*cos(hdg+pi/2);
         y = y + offset*sin(hdg+pi/2);
-        line(ax,[x,x+dx],[y,y+dy],'lineWidth',5,'color','b');
+        handle = line(ax,[x,x+dx],[y,y+dy],'lineWidth',5,'color','b');
         quiver(ax,x,y,dx/2,dy/2);
 
      end
 end
 
 %% 绘制圆弧
-function  arcDraw1(x,y,hdg,mlength,curvature,offset,laneFlag)
+function  handle = arcDraw1(x,y,hdg,mlength,curvature,offset,laneFlag)
     global ax;
     if laneFlag == 0
         n = 100;
@@ -364,7 +364,7 @@ function  arcDraw1(x,y,hdg,mlength,curvature,offset,laneFlag)
             xs(i) = integral(cosline,t(1),t(i)) + x;
             ys(i) = integral(sinline,t(1),t(i)) + y;
         end
-        plot(ax,xs,ys,'linestyle','--');
+       handle =  plot(ax,xs,ys,'linestyle','--');
 %         arrowPlot1(ax,xs,ys,'linestyle','--','number',5);
 
     %% 右侧
@@ -393,7 +393,7 @@ function  arcDraw1(x,y,hdg,mlength,curvature,offset,laneFlag)
             ys(i) = integral(sinline,t(1),t(i)) + y;
         end
 %         arrowPlot1(ax,xs,ys,'number',5);
-        plot(ax,xs,ys,'lineWidth',5,'color','b');      
+        handle = plot(ax,xs,ys,'lineWidth',5,'color','b');      
     %% 左侧
     else
         % 修改起始位置
@@ -419,7 +419,7 @@ function  arcDraw1(x,y,hdg,mlength,curvature,offset,laneFlag)
             xs(i) = integral(cosline,t(1),t(i)) + x;
             ys(i) = integral(sinline,t(1),t(i)) + y;
         end
-        plot(ax,xs,ys,'lineWidth',5,'color','b');
+        handle = plot(ax,xs,ys,'lineWidth',5,'color','b');
 %         arrowPlot1(ax,xs,ys,'number',5);
 
     end
