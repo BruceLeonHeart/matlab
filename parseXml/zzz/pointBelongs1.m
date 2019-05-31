@@ -125,8 +125,16 @@ function [offset,rotateFlg] = getOffset(roadObj,roadNum,GeoNum,side)
             if isfield(currentlaneSection,'right')&& side == -1
                 lanes = currentlaneSection.right.lane;
                 for zz1= 1:length(lanes)
-                    if lanes{1,zz1}.Attributes.type == "driving"
-                        curlane = lanes{1,zz1};
+                    if length(lanes) ==1
+                        crtlane = lanes(1);
+                    else
+                        crtlane = lanes{1,zz1};
+                    end
+                    
+                    
+                    
+                    if crtlane.Attributes.type == "driving"
+                        curlane = crtlane;
                         break;
                     end
                 end
