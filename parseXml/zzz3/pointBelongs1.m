@@ -1,4 +1,3 @@
-% function  [RoadNum,Roadx,Roady,GeoNum,LaneNum] = pointBelongs1(openDriveObj,pointX,pointY,ax)
 function  [point,cache] = pointBelongs1(openDriveObj,pointX,pointY,ax)
     format short;
     cache = [];
@@ -7,24 +6,19 @@ function  [point,cache] = pointBelongs1(openDriveObj,pointX,pointY,ax)
     roadObj = openDriveObj.road;
     roadNum = length(roadObj);
     k = 0;
-%             disList =[];
-    for i = 1:roadNum
-
+    for i = 1:roadNum %roadNum是道路顺序号
         if roadObj{1,i}.Attributes.junction == "-1"
             tempGeometryList = roadObj{1,i}.planView.geometry;
             currentRoadNum = str2double(roadObj{1,i}.Attributes.id);
             f = length(tempGeometryList);
             for j = 1:f
-                if f == 1 
-                    tempGeometry = tempGeometryList(j);
-                else
-                    tempGeometry = tempGeometryList{1,j};
-                end
+                tempGeometry = getSingleObject(tempGeometryList,j);
                 if isfield (tempGeometry,'line')
-                    x_s = str2double(tempGeometry.Attributes.x); %参考线的起点x
-                    y_s = str2double(tempGeometry.Attributes.y); %参考线的起点y
-                    s_length = str2double(tempGeometry.Attributes.length); %参考线长度
-                    hdg = str2double(tempGeometry.Attributes.hdg);%参考线延伸角度
+                    msg = getMsgFromGeo(tempGeometry);
+                    x_s = msg.x; %参考线的起点x
+                    y_s = msg.y; %参考线的起点y
+                    s_length = msg.mlength; %参考线长度
+                    hdg = msg.hdg;%参考线延伸角度
                     x_e = x_s + s_length*cos(hdg); %参考线的终点x
                     y_e = y_s + s_length*sin(hdg); %参考线的终点y
                     side  =  sideJudge(x_s,y_s,x_e,y_e,pointX,pointY);
@@ -104,35 +98,19 @@ end
 
 function [offset,rotateFlg] = getOffset(roadObj,roadNum,GeoNum,side)
     currentGeometryList = roadObj{1,roadNum}.planView.geometry;
-    tempLen = length(currentGeometryList);
-    if tempLen == 1 
-        currentGeometry = currentGeometryList(GeoNum);
-    else
-        currentGeometry = currentGeometryList{1,GeoNum};
-    end
+    currentGeometry = getSingleObject(currentGeometryList,GeoNum)
     s1 =  str2double(currentGeometry.Attributes.s);
     currentlanes = roadObj{1,roadNum}.lanes.laneSection;
     tempLen2 = length(currentlanes);
     offset = 0.0;
     rotateFlg = 0 ;
     for m =1:tempLen2
-        if tempLen2 == 1 
-            currentlaneSection = currentlanes(m);
-        else
-            currentlaneSection = currentlanes{1,m};
-        end
+        currentlaneSection = getSingleObject(currentlanes,m);
         if abs(str2double(currentlaneSection.Attributes.s) - s1)<1e-004
             if isfield(currentlaneSection,'right')&& side == -1
                 lanes = currentlaneSection.right.lane;
                 for zz1= 1:length(lanes)
-                    if length(lanes) ==1
-                        crtlane = lanes(1);
-                    else
-                        crtlane = lanes{1,zz1};
-                    end
-                    
-                    
-                    
+                    crtlane = getSingleObject(lanes,zz1);
                     if crtlane.Attributes.type == "driving"
                         curlane = crtlane;
                         break;

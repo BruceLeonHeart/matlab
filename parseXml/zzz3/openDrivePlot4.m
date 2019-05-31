@@ -84,7 +84,13 @@ global ax;
                 if geomsg.lineType == "line"
                     linemsg = linePointSet(geomsg.x,geomsg.y,geomsg.hdg,geomsg.mlength,offset,sign(laneId));
                     line(ax,[linemsg.x,linemsg.x+linemsg.dx],[linemsg.y,linemsg.y+linemsg.dy],'linestyle','-');  
-                    quiver(ax,linemsg.x,linemsg.y,linemsg.dx/2,linemsg.dy/2,'linestyle','-','color','g','maxHeadsize',0.5);
+                    
+                    if sign(laneId) == 1
+                        quiver(ax,linemsg.x+linemsg.dx,linemsg.y+linemsg.dy,-linemsg.dx/2,-linemsg.dy/2);
+                    else
+                        quiver(ax,linemsg.x,linemsg.y,linemsg.dx/2,linemsg.dy/2,'linestyle','-','color','g','maxHeadsize',0.5);
+                    end
+                        
                 end
                 if geomsg.lineType == "arc"
                     arcmsg = arcPointSet(geomsg.x,geomsg.y,geomsg.hdg,geomsg.mlength,geomsg.curvature,offset,sign(laneId));
