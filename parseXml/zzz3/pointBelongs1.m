@@ -21,6 +21,7 @@ function  [point,cache] = pointBelongs1(openDriveObj,pointX,pointY,ax)
                     hdg = msg.hdg;%参考线延伸角度
                     x_e = x_s + s_length*cos(hdg); %参考线的终点x
                     y_e = y_s + s_length*sin(hdg); %参考线的终点y
+                    
                     side  =  sideJudge(x_s,y_s,x_e,y_e,pointX,pointY);
                     
                     [offset,rotateFlg] = getOffset(roadObj,i,j,side);

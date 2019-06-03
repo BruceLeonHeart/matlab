@@ -7,78 +7,8 @@ function pathList = pathPlan1(startPoint,endPoint,ax1,openDriveObj)
     roads = openDriveObj.road;
     junctions = openDriveObj.junction;
     startPoint
-    endPoint
-    
-    %% 解析　openDriveObj
-%     roadStruct = struct([]);
-%     roads = openDriveObj.road;
-%     id = 1;
-%     for i1 = 1 : length(roads)
-%         currentRoad = roads{1,i1};
-%         Geos = currentRoad.planView.geometry;       
-%         laneSections = currentRoad.lanes.laneSection;
-%         for i2 = 1 : length(Geos)
-%             if length(Geos) ==1
-%                 currentGeo = Geos(1);
-%             else
-%                 currentGeo = Geos{1,i2};
-%             end
-%             x_s = str2double(currentGeo.Attributes.x);
-%             y_s = str2double(currentGeo.Attributes.y);
-%             hdg_s = str2double(currentGeo.Attributes.hdg);
-%             s_length = str2double(currentGeo.Attributes.length);
-%            
-%               
-%             
-%             for i3 = 1:length(laneSections)
-%                 
-%               
-%             
-%                 if length(laneSections) ==1
-%                     currentlane = laneSections(1);
-%                 else
-%                     currentlane = laneSections{1,i3};
-%                 end
-%                 
-%                 
-%                 
-%                 if isfield(currentGeo,'line')  %长度维持
-%                     s = s_length;
-%                     if isfield(currentlane,'left')
-% 
-%                     roadStruct
-%                     end
-%                 end
-% 
-%                 if isfield(currentGeo,'spiral') %考虑到openEd特性　直接赋值０
-%                     s = 0;
-%                 end
-% 
-%                 if isfield(currentGeo,'arc') %长度缩放
-% 
-%                     s = 
-%                 end
-%                 
-%                 
-%                 
-%                 
-%             end
-%         end      
-%     end
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    %考虑到生成路线过程中，会不停的生成plot/line对象
+    endPoint    
+    %考虑到生成路线过程中，会不停的生成plot/line对象 
 %    可用属性    
 %       Roadx: 1100
 %       Roady: 303.7500
@@ -126,12 +56,27 @@ function pathList = pathPlan1(startPoint,endPoint,ax1,openDriveObj)
            open
            f1 = sortrows(f,2);
            current = open(f1(1,1));
+            
+           
            %% 回溯路径过程并将轨迹进行打印
            
            if isPointOnSegment(startPoint.Roadx,startPoint.Roady,startPoint.x_end,startPoint.y_end,endPoint.Roadx,endPoint.Roady)
                pathList(length(pathList) +1) = line(ax,[startPoint.Roadx,endPoint.Roadx],[startPoint.Roady,endPoint.Roady],'lineWidth',5,'color','b');
                return;
            end
+           
+           %% OR destination lane already in open
+           for lmq = 1:length(open)
+                openSingle = open(lmq);
+                if openSingle.RoadNum == endPoint.RoadNum && openSingle.GeoNum == endPoint.GeoNum && openSingle.LaneNum == endPoint.LaneNum
+                    current.RoadNum = endPoint.RoadNum;
+                    current.GeoNum  = endPoint.GeoNum ;
+                    current.LaneNum = endPoint.LaneNum ;
+                    break;
+                end
+           end
+           
+           
            if current.RoadNum == endPoint.RoadNum && current.GeoNum == endPoint.GeoNum && current.LaneNum == endPoint.LaneNum 
                zzr =1;
                while(zzr <= size(prev,1))
@@ -453,14 +398,8 @@ function NeighborMsg = getNeighbor(RoadNum,GeoNum,LaneNum)
     NeighborMsg = []; %三列，分别记录Road,Geo,Num
     global roads;
     global junctions; 
-    
-    for z = 1:length(roads)
-        if str2double(roads{1,z}.Attributes.id) == RoadNum
-        currentRoad = roads{1,z};
-        break;
-        end
-    end
-    
+        
+    currentRoad = getCrtRoadByNum(RoadNum);
 
     if isfield(currentRoad,'link')
         mlink = currentRoad.link;
@@ -476,221 +415,32 @@ function NeighborMsg = getNeighbor(RoadNum,GeoNum,LaneNum)
      end
    %% 当前车道
     currentGeo = currentRoad.planView.geometry;
-        if GeoNum < length(currentGeo) && GeoNum > 1
-             %　处于中间时的处理方式
-                    resRoadNum = RoadNum;
-                    if sign(LaneNum) == -1
-                        resGeoNum = GeoNum +1;
-                    end
-                    if sign(LaneNum) == 1
-                        resGeoNum = GeoNum -1;
-                    end
-                    resLaneNum = LaneNum;
-                    NeighborMsg(length(NeighborMsg)+1,:) = [resRoadNum,resGeoNum,resLaneNum]; 
-        elseif GeoNum==1 && length(currentGeo) ==1
-            %处于最后一段LaneSection（包含仅有一段Geo的情况），则必须更换Road
-            if sign(LaneNum) == -1
-            %LaneNum为负，参考线右侧，但与参考线同向，下一车道处于下一Road
+        if length(currentGeo) == 1
+            if sign(LaneNum) == -1 
+                %LaneNum为负，参考线右侧，但与参考线同向，下一车道处于下一Road
                 if msuccessor.Attributes.elementType == "junction"
-                    num =1;
                     junctionId = str2double(msuccessor.Attributes.elementId);
                     for i = 1:length(junctions)
-                        if length(junctions) ==1
-                            mjunction = junctions(1);
-                        else
-                            mjunction = junctions{1,i};
-                        end
+                        mjunction = getSingleObject(junctions,i);
                         if str2double(mjunction.Attributes.id) == junctionId
                             connections = mjunction.connection;
                             for i1 = 1 :length(connections)
-                                if length(connections) ==1
-                                    mconnection = connections(1);
-                                else
-                                    mconnection = connections{1,i1};
-                                end
-                                if str2double(mconnection.Attributes.incomingRoad) == RoadNum
-                                    mlaneLinks = mconnection.laneLink;
-                                    resRoadNum = str2double(mconnection.Attributes.connectingRoad);                           
-                                    if mconnection.Attributes.incomingRoad == "start"
-                                        resGeoNum = 1;
-                                    else
-                                        for z = 1:length(roads)
-                                            if str2double(roads{1,z}.Attributes.id) == RoadNum
-                                            resRoad = roads{1,z};
-                                            break;
-                                            end
-                                        end
-                                        resGeoNum = length(resRoad.planView.geometry);
-                                    end 
-                                    
-                                    for i2 = 1:length(mlaneLinks)
-                                        if length(mlaneLinks) ==1 
-                                            mlaneLink = mlaneLinks(1);
-                                        else
-                                            mlaneLink = mlaneLinks{1,i2};
-                                        end
-
-                                        if str2double(mlaneLink.Attributes.from)==LaneNum
-                                            resLaneNum = str2double(mlaneLink.Attributes.to);
-                                            NeighborMsg(num,:) = [resRoadNum,resGeoNum,resLaneNum]; 
-                                            num = num +1;
-                                            break;
-                                        end
-                                    end
-                                    continue;
-                                end     
-                            end
-                            break;
-                        end 
-                    end 
-                end 
-
-                if msuccessor.Attributes.elementType == "road"
-                    resRoadNum = str2double(msuccessor.Attributes.elementId);
-                    for z = 1:length(roads)
-                        if str2double(roads{1,z}.Attributes.id) == resRoadNum
-                        resRoad = roads{1,z};
-                        break;
-                        end
-                    end
-                    
-                    if msuccessor.Attributes.contactPoint == "start"
-                        resGeoNum = 1;
-                        resLaneNum = -1;
-                    else
-                        resGeoNum = length(resRoad.planView.geometry);
-                        resLaneNum = 1;
-                    end
-                    NeighborMsg(length(NeighborMsg)+1,:) = [resRoadNum,resGeoNum,resLaneNum]; 
-                end
-            end
-
-            if sign(LaneNum) == 1
-                 %LaneNum为正，参考线左侧，与参考线反向，下一车道处于上一Road
-                 if mpredecessor.Attributes.elementType == "junction"
-                    num =1;
-                    junctionId = str2double(mpredecessor.Attributes.elementId);
-                    for i = 1:length(junctions)
-                        if length(junctions) ==1
-                            mjunction = junctions(1);
-                        else
-                            mjunction = junctions{1,i};
-                        end
-                        if str2double(mjunction.Attributes.id) == junctionId
-                            connections = mjunction.connection;
-                            for i1 = 1 :length(connections)
-                                if length(connections) ==1
-                                    mconnection = connections(1);
-                                else
-                                    mconnection = connections{1,i1};
-                                end
-                                if str2double(mconnection.Attributes.incomingRoad) == RoadNum
-                                    mlaneLinks = mconnection.laneLink;
-                                    resRoadNum = str2double(mconnection.Attributes.connectingRoad);                           
-                                    if mconnection.Attributes.incomingRoad == "start"
-                                        resGeoNum = 1;
-                                    else
-                                        for z = 1:length(roads)
-                                            if str2double(roads{1,z}.Attributes.id) == RoadNum
-                                            resRoad = roads{1,z};
-                                            break;
-                                            end
-                                        end
-                                        resGeoNum = length(resRoad.planView.geometry);
-                                    end 
- 
-                                    for i2 = 1:length(mlaneLinks)
-                                        if length(mlaneLinks) ==1 
-                                            mlaneLink = mlaneLinks(1);
-                                        else
-                                            mlaneLink = mlaneLinks{1,i2};
-                                        end
-
-                                        if str2double(mlaneLink.Attributes.from)==LaneNum
-                                            resLaneNum = str2double(mlaneLink.Attributes.to);
-                                            NeighborMsg(num,:) = [resRoadNum,resGeoNum,resLaneNum]; 
-                                            num = num +1;
-                                            break;
-                                        end
-                                    end
-                                    continue;
-                                end     
-                            end
-                            break;
-                        end 
-                    end 
-                 end
-                
-             
-                 if mpredecessor.Attributes.elementType == "road"
-                    resRoadNum = str2double(mpredecessor.Attributes.elementId);
-                    for z = 1:length(roads)
-                        if str2double(roads{1,z}.Attributes.id) == resRoadNum
-                        resRoad = roads{1,z};
-                        break;
-                        end
-                    end
-                    if mpredecessor.Attributes.contactPoint == "start"
-                        resGeoNum = 1;
-                        resLaneNum = -1;
-                    else
-                        resGeoNum = length(resRoad.planView.geometry);
-                        resLaneNum = 1;
-                    end
-                    NeighborMsg(length(NeighborMsg)+1,:) = [resRoadNum,resGeoNum,resLaneNum];                  
-                 end
-            end
-        elseif GeoNum==1 && length(currentGeo) >1
-            if sign(LaneNum) == -1
-                resRoadNum = RoadNum;
-                resGeoNum = GeoNum +1;
-                resLaneNum = LaneNum;
-                NeighborMsg(length(NeighborMsg)+1,:) = [resRoadNum,resGeoNum,resLaneNum];
-            end
-            if sign(LaneNum) == 1
-                %LaneNum为正，参考线左侧，与参考线反向，下一车道处于上一Road
-                 if mpredecessor.Attributes.elementType == "junction"
-                     num = 1;
-                    junctionId = str2double(mpredecessor.Attributes.elementId);
-                    for i = 1:length(junctions)
-                        if length(junctions) ==1
-                            mjunction = junctions(1);
-                        else
-                            mjunction = junctions{1,i};
-                        end
-                        if str2double(mjunction.Attributes.id) == junctionId
-                            connections = mjunction.connection;
-                            for i1 = 1 :length(connections)
-                                if length(connections) ==1
-                                    mconnection = connections(1);
-                                else
-                                    mconnection = connections{1,i1};
-                                end
+                                mconnection = getSingleObject(connections,i1);
                                 if str2double(mconnection.Attributes.incomingRoad) == RoadNum
                                     mlaneLinks = mconnection.laneLink;
                                     resRoadNum = str2double(mconnection.Attributes.connectingRoad);                           
                                     if mconnection.Attributes.contactPoint == "start"
                                         resGeoNum = 1;
                                     else
-                                        for z = 1:length(roads)
-                                            if str2double(roads{1,z}.Attributes.id) == RoadNum
-                                            resRoad = roads{1,z};
-                                            break;
-                                            end
-                                        end
+                                        resRoad = getCrtRoadByNum(resRoadNum);
                                         resGeoNum = length(resRoad.planView.geometry);
                                     end 
+                                    
                                     for i2 = 1:length(mlaneLinks)
-                                        if length(mlaneLinks) ==1 
-                                            mlaneLink = mlaneLinks(1);
-                                        else
-                                            mlaneLink = mlaneLinks{1,i2};
-                                        end
-
+                                        mlaneLink = getSingleObject(mlaneLinks,i2);
                                         if str2double(mlaneLink.Attributes.from)==LaneNum
                                             resLaneNum = str2double(mlaneLink.Attributes.to);
-                                            NeighborMsg(num,:) = [resRoadNum,resGeoNum,resLaneNum]; 
-                                            num =num +1;
+                                            NeighborMsg = [NeighborMsg;resRoadNum,resGeoNum,resLaneNum]; 
                                             break;
                                         end
                                     end
@@ -700,17 +450,61 @@ function NeighborMsg = getNeighbor(RoadNum,GeoNum,LaneNum)
                             break;
                         end 
                     end 
-                 end
+                end
                 
-             
-                 if mpredecessor.Attributes.elementType == "road"
-                    resRoadNum = str2double(mpredecessor.Attributes.elementId);
-                    for z = 1:length(roads)
-                        if str2double(roads{1,z}.Attributes.id) == resRoadNum
-                        resRoad = roads{1,z};
-                        break;
-                        end
+                if msuccessor.Attributes.elementType == "road"
+                    resRoadNum = str2double(msuccessor.Attributes.elementId);
+                    resRoad = getCrtRoadByNum(resRoadNum);
+                    if msuccessor.Attributes.contactPoint == "start"
+                        resGeoNum = 1;
+                        resLaneNum = -1;
+                    else
+                        resGeoNum = length(resRoad.planView.geometry);
+                        resLaneNum = 1;
                     end
+                    NeighborMsg = [NeighborMsg;resRoadNum,resGeoNum,resLaneNum]; 
+                end
+                               
+            end
+            
+            if sign(LaneNum) == 1
+                if mpredecessor.Attributes.elementType == "junction"
+                    junctionId = str2double(mpredecessor.Attributes.elementId);
+                    for i = 1:length(junctions)
+                        mjunction = getSingleObject(junctions,i);
+                        if str2double(mjunction.Attributes.id) == junctionId
+                            connections = mjunction.connection;
+                            for i1 = 1 :length(connections)
+                                mconnection = getSingleObject(connections,i1);
+                                if str2double(mconnection.Attributes.incomingRoad) == RoadNum
+                                    mlaneLinks = mconnection.laneLink;
+                                    resRoadNum = str2double(mconnection.Attributes.connectingRoad);                           
+                                    if mconnection.Attributes.contactPoint == "start"
+                                        resGeoNum = 1;
+                                    else
+                                        resRoad = getCrtRoadByNum(resRoadNum);
+                                        resGeoNum = length(resRoad.planView.geometry);
+                                    end 
+ 
+                                    for i2 = 1:length(mlaneLinks)
+                                        mlaneLink = getSingleObject(mlaneLinks,i2);
+                                        if str2double(mlaneLink.Attributes.from)==LaneNum
+                                            resLaneNum = str2double(mlaneLink.Attributes.to);
+                                            NeighborMsg = [NeighborMsg;resRoadNum,resGeoNum,resLaneNum]; 
+                                            break;
+                                        end
+                                    end
+                                    continue;
+                                end     
+                            end
+                            break;
+                        end 
+                    end 
+                end
+                
+               if mpredecessor.Attributes.elementType == "road"
+                    resRoadNum = str2double(mpredecessor.Attributes.elementId);
+                    resRoad = getCrtRoadByNum(resRoadNum);
                     if mpredecessor.Attributes.contactPoint == "start"
                         resGeoNum = 1;
                         resLaneNum = -1;
@@ -718,47 +512,39 @@ function NeighborMsg = getNeighbor(RoadNum,GeoNum,LaneNum)
                         resGeoNum = length(resRoad.planView.geometry);
                         resLaneNum = 1;
                     end
-                    NeighborMsg(length(NeighborMsg)+1,:) = [resRoadNum,resGeoNum,resLaneNum];                  
-                 end
+                    NeighborMsg = [NeighborMsg;resRoadNum,resGeoNum,resLaneNum];                  
+                end
+                
             end
-        elseif GeoNum==length(currentGeo) && length(currentGeo) >1
-            if sign(LaneNum) == -1
+            
+        end
+        
+        if length(currentGeo) >1 && sign(LaneNum) == -1 
+            if GeoNum == length(currentGeo)
+               %LaneNum为负，参考线右侧，但与参考线同向，下一车道处于下一Road
                 if msuccessor.Attributes.elementType == "junction"
-                    num =1;
                     junctionId = str2double(msuccessor.Attributes.elementId);
                     for i = 1:length(junctions)
-                        if length(junctions) ==1
-                            mjunction = junctions(1);
-                        else
-                            mjunction = junctions{1,i};
-                        end
+                        mjunction = getSingleObject(junctions,i);
                         if str2double(mjunction.Attributes.id) == junctionId
                             connections = mjunction.connection;
                             for i1 = 1 :length(connections)
-                                if length(connections) ==1
-                                    mconnection = connections(1);
-                                else
-                                    mconnection = connections{1,i1};
-                                end
+                                mconnection = getSingleObject(connections,i1);
                                 if str2double(mconnection.Attributes.incomingRoad) == RoadNum
                                     mlaneLinks = mconnection.laneLink;
                                     resRoadNum = str2double(mconnection.Attributes.connectingRoad);                           
-                                    if mconnection.Attributes.incomingRoad == "start"
+                                    if mconnection.Attributes.contactPoint == "start"
                                         resGeoNum = 1;
                                     else
-                                        resGeoNum = length(roads{1,resRoadNum}.planView.geometry);
+                                        resRoad = getCrtRoadByNum(resRoadNum);
+                                        resGeoNum = length(resRoad.planView.geometry);
                                     end 
+                                    
                                     for i2 = 1:length(mlaneLinks)
-                                        if length(mlaneLinks) ==1 
-                                            mlaneLink = mlaneLinks(1);
-                                        else
-                                            mlaneLink = mlaneLinks{1,i2};
-                                        end
-
+                                        mlaneLink = getSingleObject(mlaneLinks,i2);
                                         if str2double(mlaneLink.Attributes.from)==LaneNum
                                             resLaneNum = str2double(mlaneLink.Attributes.to);
-                                            NeighborMsg(num,:) = [resRoadNum,resGeoNum,resLaneNum]; 
-                                            num = num +1;
+                                            NeighborMsg = [NeighborMsg;resRoadNum,resGeoNum,resLaneNum]; 
                                             break;
                                         end
                                     end
@@ -768,36 +554,95 @@ function NeighborMsg = getNeighbor(RoadNum,GeoNum,LaneNum)
                             break;
                         end 
                     end 
-                end 
-
+                end
+                
                 if msuccessor.Attributes.elementType == "road"
                     resRoadNum = str2double(msuccessor.Attributes.elementId);
-                    for z = 1:length(roads)
-                        if str2double(roads{1,z}.Attributes.id) == resRoadNum
-                        resRoad = roads{1,z};
-                        break;
-                        end
-                    end
+                    resRoad = getCrtRoadByNum(resRoadNum);
                     if msuccessor.Attributes.contactPoint == "start"
                         resGeoNum = 1;
-                        resLaneNum = 1;
+                        resLaneNum = -1;
                     else
                         resGeoNum = length(resRoad.planView.geometry);
-                        resLaneNum = -1;
+                        resLaneNum = 1;
                     end
-                    NeighborMsg(length(NeighborMsg)+1,:) = [resRoadNum,resGeoNum,resLaneNum]; 
+                    NeighborMsg = [NeighborMsg;resRoadNum,resGeoNum,resLaneNum]; 
                 end
+               
+               
             end
-            if sign(LaneNum) == 1
-                resRoadNum = RoadNum;
-                resGeoNum = GeoNum -1;
-                resLaneNum = LaneNum;
-                NeighborMsg(length(NeighborMsg)+1,:) = [resRoadNum,resGeoNum,resLaneNum];
+            
+            if GeoNum < length(currentGeo)
+               resRoadNum = RoadNum;
+               resGeoNum = GeoNum +1;
+               resLaneNum = LaneNum;
+               NeighborMsg = [NeighborMsg;resRoadNum,resGeoNum,resLaneNum];               
+            end
+            
+        end
+        
+        if length(currentGeo) >1 && sign(LaneNum) == 1 
+            if GeoNum == 1
+                if mpredecessor.Attributes.elementType == "junction"
+                    junctionId = str2double(mpredecessor.Attributes.elementId);
+                    for i = 1:length(junctions)
+                        mjunction = getSingleObject(junctions,i);
+                        if str2double(mjunction.Attributes.id) == junctionId
+                            connections = mjunction.connection;
+                            for i1 = 1 :length(connections)
+                                mconnection = getSingleObject(connections,i1);
+                                if str2double(mconnection.Attributes.incomingRoad) == RoadNum
+                                    mlaneLinks = mconnection.laneLink;
+                                    resRoadNum = str2double(mconnection.Attributes.connectingRoad);                           
+                                    if mconnection.Attributes.contactPoint == "start"
+                                        resGeoNum = 1;
+                                    else
+                                        resRoad = getCrtRoadByNum(resRoadNum);
+                                        resGeoNum = length(resRoad.planView.geometry);
+                                    end 
+ 
+                                    for i2 = 1:length(mlaneLinks)
+                                        mlaneLink = getSingleObject(mlaneLinks,i2);
+                                        if str2double(mlaneLink.Attributes.from)==LaneNum
+                                            resLaneNum = str2double(mlaneLink.Attributes.to);
+                                            NeighborMsg = [NeighborMsg;resRoadNum,resGeoNum,resLaneNum]; 
+                                            break;
+                                        end
+                                    end
+                                    continue;
+                                end     
+                            end
+                            break;
+                        end 
+                    end 
+                end
+                
+               if mpredecessor.Attributes.elementType == "road"
+                    resRoadNum = str2double(mpredecessor.Attributes.elementId);
+                    resRoad = getCrtRoadByNum(resRoadNum);
+                    if mpredecessor.Attributes.contactPoint == "start"
+                        resGeoNum = 1;
+                        resLaneNum = -1;
+                    else
+                        resGeoNum = length(resRoad.planView.geometry);
+                        resLaneNum = 1;
+                    end
+                    NeighborMsg = [NeighborMsg;resRoadNum,resGeoNum,resLaneNum];                  
+                end
                 
             end
-        end
+                
             
+            if GeoNum > 1
+               resRoadNum = RoadNum;
+               resGeoNum = GeoNum -1;
+               resLaneNum = LaneNum;
+               NeighborMsg = [NeighborMsg;resRoadNum,resGeoNum,resLaneNum];
+            end
+        end
 end
+            
+
 %%　通过 Road,Geo,Lane获取相关信息
 function LineMsg1 = getLineMsg(RoadNum,GeoNum,LaneNum)
     global roads;
@@ -806,11 +651,7 @@ function LineMsg1 = getLineMsg(RoadNum,GeoNum,LaneNum)
         if str2double(roads{1,i}.Attributes.id) == RoadNum
             Geos = roads{1,i}.planView.geometry;
             for j = 1:length(Geos)
-                if length(Geos) == 1
-                    currentGeo = Geos(1);
-                else
-                    currentGeo = Geos{1,j};
-                end  
+                currentGeo = getSingleObject(Geos,j); 
                 if j == GeoNum
                 LineMsg1.s = str2double(currentGeo.Attributes.s);
                 LineMsg1.x = str2double(currentGeo.Attributes.x);
@@ -841,6 +682,7 @@ function LineMsg1 = getLineMsg(RoadNum,GeoNum,LaneNum)
             end
             
             LaneSections = roads{1,i}.lanes.laneSection;
+%             crtLaneSection = getSingleObject(LaneSections,1)
             if length(LaneSections) == 1
                 crtLaneSection = LaneSections(1);
             else
@@ -853,12 +695,7 @@ function LineMsg1 = getLineMsg(RoadNum,GeoNum,LaneNum)
                 lanes = crtLaneSection.left.lane;
             end
             for k = 1:length(lanes)
-                if length(lanes) == 1
-                    crtlane = lanes(1);
-                else
-                    crtlane = lanes{1,k};
-                end
-                
+                crtlane = getSingleObject(lanes,k);
                 if str2double(crtlane.Attributes.id) == LaneNum
                     LineMsg1.offset = str2double(crtlane.width.Attributes.a);
                     break;
@@ -982,4 +819,15 @@ function [x_f,y_f] = getSpiralFinalXY(x,y,hdg,mlength,cvstart,cvend,offset,laneF
     
 end
 
+% get Road obj by Number
+function target =  getCrtRoadByNum(num)
+    global roads;
+    for z = 1:length(roads)
+        if str2double(roads{1,z}.Attributes.id) == num
+        target = roads{1,z};
+        break;
+        end
+    end
+    
+end
 
