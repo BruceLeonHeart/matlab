@@ -8,7 +8,7 @@ default_speed_limit = default_speed_limit / 3.6;                            % ch
 %% data Input --------------------------------------------------------
 MAP = xml2struct( 'demomap.xml' );                          % read OpenDRIVE File
 MAP = MAP.OpenDRIVE;                                                        
-  
+
   % MAP.header: <1x1 struct>
   % MAP.road: <1x? cell>
   %  |- MAP.road{1,1}:   link: [1x1 struct] - MAP.road{1,1}.link.predecessor.{elementId, elementType, contactPoint}

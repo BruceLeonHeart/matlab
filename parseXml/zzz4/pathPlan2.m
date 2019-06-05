@@ -1,4 +1,4 @@
-function pathList = pathPlan1(startPoint,endPoint,ax1,openDriveObj)
+function pathList = pathPlan1(startPoint,endPoint,ax1,openDriveObj,roadNet)
     global ax;
     ax = ax1;
     
@@ -10,7 +10,7 @@ function pathList = pathPlan1(startPoint,endPoint,ax1,openDriveObj)
     endPoint    
     %考虑到生成路线过程中，会不停的生成plot/line对象 
 %    可用属性    
-%       Roadx: 1100
+%       Roadx: 1000
 %       Roady: 303.7500
 %     RoadNum: 2
 %      GeoNum: 1
@@ -20,10 +20,17 @@ function pathList = pathPlan1(startPoint,endPoint,ax1,openDriveObj)
 %     y_start: 303.7500
 %       x_end: 950
 %       y_end: 303.7500
+%         x_s: 1150
+%         y_s: 300
+%         x_e: 950
+%         y_e: 300
+%       x_ref: 1000
+%       y_ref: 300
       pathList = [];  % record for final path
 %       path(length(path) +1) = line(ax,[startPoint.Roadx,startPoint.x_end],[startPoint.Roady,startPoint.y_end],'lineWidth',15,'color','g');  
 %       path(length(path) +1) = line(ax,[endPoint.x_start,endPoint.Roadx],[endPoint.y_start,endPoint.Roady],'lineWidth',10,'color','r');  
 %       
+
 
        %% A star Algo
 
@@ -35,10 +42,10 @@ function pathList = pathPlan1(startPoint,endPoint,ax1,openDriveObj)
        
        % add 1st item
        openlen = openlen + 1;
-       open(1).x = startPoint.x_end; %final x
-       open(1).y = startPoint.y_end; %final y
-       open(1).g = getDis(startPoint.x_end,startPoint.y_end,startPoint.Roadx,startPoint.Roady);
-       open(1).h = getDis(startPoint.x_end,startPoint.y_end,endPoint.Roadx,endPoint.Roady);
+       open(1).x = startPoint.x_e; %final x
+       open(1).y = startPoint.y_e; %final y
+       open(1).g = getDis(startPoint.x_e,startPoint.y_e,startPoint.x_ref,startPoint.y_ref);
+       open(1).h = getDis(startPoint.x_e,startPoint.y_e,endPoint.x_ref,endPoint.x_ref);
        open(1).f = open(1).g + open(1).h;
        open(1).RoadNum = startPoint.RoadNum;
        open(1).GeoNum = startPoint.GeoNum;
@@ -642,6 +649,32 @@ function NeighborMsg = getNeighbor(RoadNum,GeoNum,LaneNum)
             end
         end
 end
+
+
+%% neighbor catch based on ROADS
+function NeighborMsg = getNeighbor1(RoadNum,GeoNum,LaneNum,roadNet)
+    crtRoad =  getCrtRoadByNum(RoadNum,roadNet);
+    if sign(LaneNum) == -1
+        roadArr = crtRoad.right_successor_road_id;
+        laneArr = crtRoad.right_successor_road_lane;
+    elseif sign(LaneNum) == -1
+        roadArr = crtRoad.right_successor_road_id;
+        laneArr = crtRoad.right_successor_road_lane;
+    end
+    NeighborMsg = [];
+    if length(roadArr) ~= length(laneArr)
+        fprintf("unmatched size for Lane And Road");    
+    else
+        for i = 1:length(roadArr)
+            NeighborMsg(i,:) = [roadArr(i) ,laneArr(i)];
+        end
+        
+    end
+    
+    
+    
+    
+end
             
 
 %%　通过 Road,Geo,Lane获取相关信息
@@ -820,15 +853,13 @@ function [x_f,y_f] = getSpiralFinalXY(x,y,hdg,mlength,cvstart,cvend,offset,laneF
     
 end
 
-% get Road obj by Number
-function target =  getCrtRoadByNum(num)
-    global roads;
-    for z = 1:length(roads)
-        if str2double(roads{1,z}.Attributes.id) == num
-        target = roads{1,z};
+%% get Road obj by Number
+function target =  getCrtRoadByNum(num,roadNet)
+    for z = 1:length(roadNet)
+        if str2double(roadNet(z).id) == num
+        target = roadNet(z);
         break;
         end
-    end
-    
+    end   
 end
 

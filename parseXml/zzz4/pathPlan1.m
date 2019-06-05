@@ -54,7 +54,7 @@ function pathList = pathPlan1(startPoint,endPoint,ax1,openDriveObj)
            for i = 1:openlen
                f(i,:) = [i , open(i).f];
            end
-           open
+           
            f1 = sortrows(f,2);
            current = open(f1(1,1));
             

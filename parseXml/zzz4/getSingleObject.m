@@ -6,4 +6,3 @@ else
     single = obj{1,idx};
 end
 end
-
