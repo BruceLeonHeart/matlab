@@ -12,11 +12,11 @@ function  mPath = AStarMain(startPoint,endPoint,roadNet)
     
     %% 添加起点进入openSet
     openlen = openlen + 1;
-    openSet(1).x = startPoint.x_end; %final x
-    openSet(1).y = startPoint.y_end; %final y
-    openSet(1).gCost = CoorGetDis(startPoint.x_end,startPoint.y_end,startPoint.x,startPoint.y);
-    openSet(1).hCost = CoorGetDis(startPoint.x_end,startPoint.y_end,endPoint.x,endPoint.y);
-    openSet(1).fCost = open(1).gCost + open(1).hCost;
+    openSet(1).x = startPoint.x_e_offset; %final x
+    openSet(1).y = startPoint.y_e_offset; %final y
+    openSet(1).gCost = CoorGetDis(startPoint.x_e_offset,startPoint.y_e_offset,startPoint.x_ref_offset,startPoint.y_ref_offset);
+    openSet(1).hCost = CoorGetDis(startPoint.x_e_offset,startPoint.y_e_offset,endPoint.x_ref_offset,endPoint.y_ref_offset);
+    openSet(1).fCost = openSet(1).gCost + openSet(1).hCost;
     openSet(1).id = startPoint.roadNum;
     openSet(1).direction = startPoint.direction;
     
@@ -28,8 +28,8 @@ function  mPath = AStarMain(startPoint,endPoint,roadNet)
         current = openSet(postion);
         
         %% 如果终点落在起点与第一个要去的点中间，则直接返回
-        if CoorIsPointOnSeg(startPoint.x,startPoint.y,startPoint.x_end,startPoint.y_end,endPoint.x,endPoint.y)
-            mPath = [startPoint.RoadNum startPoint.direction]
+        if CoorIsPointOnSeg(startPoint.x_ref,startPoint.y_ref,startPoint.x_e,startPoint.y_e,endPoint.x_ref,endPoint.y_ref) && startPoint.direction == endPoint.direction
+            mPath = [startPoint.roadNum startPoint.direction];
             return;
         end
         
@@ -41,8 +41,9 @@ function  mPath = AStarMain(startPoint,endPoint,roadNet)
         end
         
         %% 如果current　road/direction　与终点一致，则回溯路径，结束遍历
-        if current.id == endPoint.roadNum && current.direction == endPoint.direction;
-            mPath = reconstruction(current,prev,mPath)
+        if current.id == endPoint.roadNum && current.direction == endPoint.direction
+            mPath = reconstruction(current,prev,mPath);
+            mPath = [endPoint.roadNum,endPoint.direction;mPath];%添加结束点的road/direction
             return;
         end
         
@@ -54,8 +55,8 @@ function  mPath = AStarMain(startPoint,endPoint,roadNet)
         openlen = openlen -1; % remove current
         
         %% 遍历邻居
-        NeighborSet = getNeighborSetFromRoadNet(current.id,current.direction,roadNet)；
-        for j = 1 :size(NeighborSet,2)
+        NeighborSet = getNeighborSetFromRoadNet(current.id,current.direction,roadNet);
+        for j = 1 :size(NeighborSet,1)
             neighbor.id = NeighborSet(j,1);
             neighbor.direction = NeighborSet(j,2);
             
@@ -64,8 +65,6 @@ function  mPath = AStarMain(startPoint,endPoint,roadNet)
             end
             
             temp_gCost = AStarGetGCost(current,neighbor,roadNet); %本次的预计gCost
-            originMsg　= struct(); %如果neighbor已处于OpenSet，则该结构体代表原来的信息
-           
             
             if ~isInSet(neighbor.id,neighbor.direction,openSet) %不在OpenSet中，加入
                openlen = openlen + 1;
@@ -77,26 +76,22 @@ function  mPath = AStarMain(startPoint,endPoint,roadNet)
                openSet(openlen).hCost = AStarGetHCost(endPoint,neighbor,roadNet);
                openSet(openlen).fCost = openSet(openlen).gCost + openSet(openlen).hCost;
             elseif isInSet(neighbor.id,neighbor.direction,openSet) %在OpenSet中，判断与原来的gCost对比判断是否需要更新
-                originMsg = getMsgFromSet(neighbor.id,neighbor.direction,openSet)
+                originMsg = getMsgFromSet(neighbor.id,neighbor.direction,openSet);
                 gScore = originMsg.gCost;
-                if temp_gCost >= gscore　%比原来大，不可以更新
+                if temp_gCost >= gScore %比原来大，不可以更新
                     continue;
                 end
             end
             
             prev = [prev;current.id,current.direction,neighbor.id,neighbor.direction];
             %更新OpenSet
-            OpenSet = updateOpenSet(OpenSet,neighbor.id,neighbor.direction,temp_gCost);
+            openSet = updateOpenSet(openSet,neighbor.id,neighbor.direction,temp_gCost);
             
         end
         
     end %end for while openlen>0
     
 end
-
-
-
-
 
 
 %% 判断某Road的某direction是否已处于Set中
@@ -119,7 +114,7 @@ function NeighborSet = getNeighborSetFromRoadNet(id,direction,roadNet)
         directionSet = crtRoad.right_successor_road_lane;
     elseif direction ==1 % 左侧
         roadSet = crtRoad.left_successor_road_id;
-        directionSet = crtRoad.right_successor_road_lane;
+        directionSet = crtRoad.left_successor_road_lane;
     end
     
     if length(roadSet) == length(directionSet)
@@ -128,6 +123,7 @@ function NeighborSet = getNeighborSetFromRoadNet(id,direction,roadNet)
         end
     else
         fprintf("邻居道路数目与方向数目不匹配，请检查数据源");
+        fprintf("邻居道路数目与方向数目不匹配，请检查数据源1");
     end
 end
 
@@ -156,7 +152,6 @@ function mPath = reconstruction(current,prev,mPath)
     end
 end
 
-
 %% 获取Set中的详细信息
 function msg = getMsgFromSet(id,direction,mSet)
     msg = struct();
@@ -167,7 +162,7 @@ function msg = getMsgFromSet(id,direction,mSet)
     end
 end
 
-%%更新OpenSet
+%% 更新OpenSet
 function OpenSet = updateOpenSet(OpenSet,id,direction,temp_gCost)
     for i = 1:length(OpenSet)
         if OpenSet(i).id == id && OpenSet(i).direction == direction

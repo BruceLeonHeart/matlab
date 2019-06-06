@@ -59,11 +59,11 @@ for i = 1:1:road_num
     finalGeo = getSingleObject(MAP.road{1,i}.planView.geometry,geometry_num);
     finalGeoMsg = OpenDriveGetGeoMsg(finalGeo);
     if strcmp(finalGeoMsg.lineType,'line')
-        [ROADS(i).end_x,ROADS(i).end_y] = CoorGetFinalLine(finalGeoMsg.x,finalGeoMsg.y,finalGeoMsg.hdg,finalGeoMsg.mlength,0,0);
+        [ROADS(id).end_x,ROADS(id).end_y] = CoorGetFinalLine(finalGeoMsg.x,finalGeoMsg.y,finalGeoMsg.hdg,finalGeoMsg.mlength,0,0);
     elseif strcmp(finalGeoMsg.lineType,'arc')
-        [ROADS(i).end_x,ROADS(i).end_y] = CoorGetFinalArc(finalGeoMsg.x,finalGeoMsg.y,finalGeoMsg.hdg,finalGeoMsg.mlength,finalGeoMsg.curvature,0,0);   
+        [ROADS(id).end_x,ROADS(id).end_y] = CoorGetFinalArc(finalGeoMsg.x,finalGeoMsg.y,finalGeoMsg.hdg,finalGeoMsg.mlength,finalGeoMsg.curvature,0,0);   
     elseif strcmp(finalGeoMsg.lineType,'spiral')
-        [ROADS(i).end_x,ROADS(i).end_y] = CoorGetFinalSpiral(finalGeoMsg.x,finalGeoMsg.y,finalGeoMsg.hdg,finalGeoMsg.mlength,finalGeoMsg.curvStart,finalGeoMsg.curvEnd,offset,laneFlag);
+        [ROADS(id).end_x,ROADS(id).end_y] = CoorGetFinalSpiral(finalGeoMsg.x,finalGeoMsg.y,finalGeoMsg.hdg,finalGeoMsg.mlength,finalGeoMsg.curvStart,finalGeoMsg.curvEnd,offset,laneFlag);
     end
     
     if geometry_num ==1

@@ -1,7 +1,6 @@
-function [outputArg1,outputArg2] = PlotPointBelong(inputArg1,inputArg2)
-%PLOTPOINTBELONG 此处显示有关此函数的摘要
-%   此处显示详细说明
-outputArg1 = inputArg1;
-outputArg2 = inputArg2;
+function plotList = PlotPointBelong(ax,pointX,pointY,point)
+%plotList:记录点归属的列表
+plotList = plot(ax,pointX,pointY,'+');
+plotList = [plotList ; line(ax,[pointX point.x_ref_offset],[pointY point.y_ref_offset],'linestyle','--')];
 end
 
