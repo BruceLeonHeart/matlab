@@ -1,6 +1,5 @@
- function spiralmsg = CoorGetSpiralSet(x_start,y_start,hdg,mlength,curvstart,curvEnd,offset,laneFlag)  
+ function spiralmsg = CoorGetSpiralSet(x_start,y_start,hdg,mlength,curvstart,curvEnd,offset,laneFlag,n)  
 
-    n = 100;
     xs = zeros(1,n);
     ys = zeros(1,n);
     t = linspace(0,mlength,n);

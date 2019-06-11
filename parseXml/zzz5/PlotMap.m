@@ -33,11 +33,11 @@ global ax;
             quiver(ax,linemsg.x,linemsg.y,linemsg.dx/2,linemsg.dy/2,'linestyle','--','color','r','maxHeadsize',0.5);
         end
         if msg.lineType == "arc"
-            arcmsg = CoorGetArcSet(msg.x,msg.y,msg.hdg,msg.mlength,msg.curvature,0,0);
+            arcmsg = CoorGetArcSet(msg.x,msg.y,msg.hdg,msg.mlength,msg.curvature,0,0,100);
             plot(ax,arcmsg.xs,arcmsg.ys,'linestyle','--');
         end
         if msg.lineType == "spiral"
-            spiralmsg = CoorGetSpiralSet(msg.x,msg.y,msg.hdg,msg.mlength,msg.curvStart,msg.curvEnd,0,0);
+            spiralmsg = CoorGetSpiralSet(msg.x,msg.y,msg.hdg,msg.mlength,msg.curvStart,msg.curvEnd,0,0,100);
             plot(ax,spiralmsg.xs,spiralmsg.ys,'linestyle','--');
         end
     end
@@ -45,32 +45,8 @@ global ax;
 
     % 　绘制车道线
     % 找到laneSection与Geo的对应关系
-    laneSectionRange = [];
-    for n = 1:laneSectionListSize
-        temp_laneSection = getSingleObject(laneSectionList,n);
-        temp_laneSection_S = str2double(temp_laneSection.Attributes.s);
-        msgResult = OpenDriveUnitGeoLane(mRoadObj,temp_laneSection_S);%车道的对应参考线信息
-        laneSectionRange = [laneSectionRange,msgResult.id];
-    end 
-    if ~ismember(tempGeoListSize,laneSectionRange)
-        laneSectionRange = [laneSectionRange,tempGeoListSize];
-    end
-   laneGeoMap = struct();
-    if laneSectionRange(end) == 1
-        laneGeoMap.id =1;
-        laneGeoMap.geo = 1;
-    else
-        lsrSize = size(laneSectionRange,2);
-        for k = 1:lsrSize            
-            laneGeoMap(k).id = laneSectionRange(k);
-            if k < lsrSize
-                laneGeoMap(k).geo = laneSectionRange(k):laneSectionRange(k+1)-1;
-            else
-                laneGeoMap(k).geo = laneSectionRange(k):laneSectionRange(end);
-            end
-        end
-
-    end
+    laneGeoMap = OpenDriveUnitGeoLane(mRoadObj);
+    
     %以laneSection为基准绘制下属的Geo区域
     for i0 = 1:length(laneGeoMap)
         crtlaneSection = laneGeoMap(i0).id;
@@ -95,11 +71,11 @@ global ax;
                         
                 end
                 if geomsg.lineType == "arc"
-                    arcmsg = CoorGetArcSet(geomsg.x,geomsg.y,geomsg.hdg,geomsg.mlength,geomsg.curvature,offset,sign(laneId));
+                    arcmsg = CoorGetArcSet(geomsg.x,geomsg.y,geomsg.hdg,geomsg.mlength,geomsg.curvature,offset,sign(laneId),100);
                     plot(ax,arcmsg.xs,arcmsg.ys,'linestyle','-');
                 end
                 if geomsg.lineType == "spiral"
-                    spiralmsg = CoorGetSpiralSet(geomsg.x,geomsg.y,geomsg.hdg,geomsg.mlength,geomsg.curvStart,geomsg.curvEnd,offset,sign(laneId));
+                    spiralmsg = CoorGetSpiralSet(geomsg.x,geomsg.y,geomsg.hdg,geomsg.mlength,geomsg.curvStart,geomsg.curvEnd,offset,sign(laneId),100);
                     plot(ax,spiralmsg.xs,spiralmsg.ys,'linestyle','-');
                 end
                 end

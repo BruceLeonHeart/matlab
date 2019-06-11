@@ -51,7 +51,7 @@ function  point = OpenDrivePointBelong(openDriveObj,pointX,pointY)
                         continue;
                     end
 
-                    disList = [disList;abs(v),x_ref,y_ref,currentRoadNum,direction,hdg,x_s,y_s,x_e,y_e,s_e,offset,x_ref_offset,y_ref_offset,x_s_offset,y_s_offset,x_e_offset,y_e_offset];
+                    disList = [disList;abs(v),x_ref,y_ref,currentRoadNum,direction,hdg,x_s,y_s,x_e,y_e,s_e,offset,x_ref_offset,y_ref_offset,x_s_offset,y_s_offset,x_e_offset,y_e_offset,geoIdx];
                     
                 end              
             end          
@@ -75,6 +75,7 @@ function  point = OpenDrivePointBelong(openDriveObj,pointX,pointY)
     point.y_s_offset = disList(1,16);
     point.x_e_offset = disList(1,17);
     point.y_e_offset = disList(1,18);
+    point.geoNum = disList(1,19);
     
 end
 

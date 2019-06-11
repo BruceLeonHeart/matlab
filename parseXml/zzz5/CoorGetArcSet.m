@@ -1,10 +1,9 @@
-function  arcmsg = CoorGetArcSet(x,y,hdg,mlength,curvature,offset,laneFlag)
+function  arcmsg = CoorGetArcSet(x,y,hdg,mlength,curvature,offset,laneFlag,n)
     if laneFlag == 0
-        n = 100;
         t = linspace(0,mlength,n);
         xs = zeros(1,n);
         ys = zeros(1,n);
-        cosline = @(t)(cos(hdg + curvature*t ));
+        cosline = @(t)(cos(hdg + curvature *t ));
         sinline = @(t)(sin(hdg + curvature *t ));
         for i = 1:n
             xs(i) = integral(cosline,t(1),t(i)) + x;
@@ -28,7 +27,6 @@ function  arcmsg = CoorGetArcSet(x,y,hdg,mlength,curvature,offset,laneFlag)
             current_c = 1/current_r;
         end
         cur_mlength = mlength * current_r/origin_r;
-        n = 100;
         t = linspace(0,cur_mlength,n);
         xs = zeros(1,n);
         ys = zeros(1,n);
@@ -57,7 +55,6 @@ function  arcmsg = CoorGetArcSet(x,y,hdg,mlength,curvature,offset,laneFlag)
             current_c = 1/current_r;
         end
         cur_mlength = mlength * current_r/origin_r;
-        n = 100;
         t = linspace(0,cur_mlength,n);
         xs = zeros(1,n);
         ys = zeros(1,n);

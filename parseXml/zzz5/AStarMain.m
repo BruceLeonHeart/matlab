@@ -28,20 +28,20 @@ function  mPath = AStarMain(startPoint,endPoint,roadNet)
         current = openSet(postion);
         
         %% 如果终点落在起点与第一个要去的点中间，则直接返回
-        if CoorIsPointOnSeg(startPoint.x_ref,startPoint.y_ref,startPoint.x_e,startPoint.y_e,endPoint.x_ref,endPoint.y_ref) && startPoint.direction == endPoint.direction
+        if CoorIsPointOnSeg(startPoint.x_ref_offset,startPoint.y_ref_offset,startPoint.x_e_offset,startPoint.y_e_offset,endPoint.x_ref_offset,endPoint.y_ref_offset)
             mPath = [startPoint.roadNum startPoint.direction];
             return;
         end
         
         %% 如果终点所在road/direction已出现在OpenSet中，即便fCost当前不为最小，仍将该选择置为current，来结束搜索。
     
-        if isInSet(endPoint.roadNum,endPoint.direction,openSet)
+        if isInSet(endPoint.roadNum,endPoint.direction,openSet)&&closelen~=0
             current.id = endPoint.roadNum;
             current.direction = endPoint.direction;
         end
         
         %% 如果current　road/direction　与终点一致，则回溯路径，结束遍历
-        if current.id == endPoint.roadNum && current.direction == endPoint.direction
+        if current.id == endPoint.roadNum && current.direction == endPoint.direction&&closelen~=0
             mPath = reconstruction(current,prev,mPath);
             mPath = [endPoint.roadNum,endPoint.direction;mPath];%添加结束点的road/direction
             return;
@@ -59,6 +59,17 @@ function  mPath = AStarMain(startPoint,endPoint,roadNet)
         for j = 1 :size(NeighborSet,1)
             neighbor.id = NeighborSet(j,1);
             neighbor.direction = NeighborSet(j,2);
+            
+            
+               %% 如果current　road/direction　与终点一致，则回溯路径，结束遍历
+            if neighbor.id == endPoint.roadNum && neighbor.direction == endPoint.direction&&closelen~=0
+                mPath = reconstruction(current,prev,mPath);
+                mPath = [current.id,current.direction;mPath];
+                mPath = [endPoint.roadNum,endPoint.direction;mPath];%添加结束点的road/direction
+                return;
+            end
+            
+            
             
             if isInSet(neighbor.id,neighbor.direction,closedSet)
                 continue;
