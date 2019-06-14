@@ -1,4 +1,6 @@
-function pathList = PlotPath(ax,mPath,startPoint,endPoint,openDriveObj)
+function pathList = PlotPath(ax0,mPath,startPoint,endPoint,openDriveObj)
+global ax;
+ax = ax0;
 roadObj = openDriveObj.road;
 %在地图上显示算法规划出的路径
 m = size(mPath,1);
@@ -51,51 +53,40 @@ end
 %绘制完整路段
 function tempPlot = plotRoadByDirection(ax,mRoadObj,direction)
     tempPlot = [];
-    %　参考线部分
-    tempGeoList = mRoadObj.planView.geometry;
-    tempGeoListSize = length(tempGeoList);
-    
-    %　车道部分
     laneSectionList = mRoadObj.lanes.laneSection;
-    laneSectionListSize = length(laneSectionList);
+    [Geos,laneSections,laneSecMap] = OpenDriveUnitGeoLane(mRoadObj);
 
-    % 　绘制车道线
-    % 找到laneSection与Geo的对应关系
-    laneGeoMap = OpenDriveUnitGeoLane(mRoadObj);
+    %车道线基于参考线
+    %laneSection中的每一个s至少对应一个geo
+    %即对任意的一个laneSection，与geo的关系是一对一或者一对多
+    %构建对应关系结构体   
+    for j =1:length(laneSecMap)
+        crtLaneSec = getSingleObject(laneSectionList,j);
+        startGeo = laneSecMap(j).startGeoNum;
+        endGeo = laneSecMap(j).endGeoNum;
+        for j1 = 1:length(laneSections)
+            if laneSections(j1).s == str2double(crtLaneSec.Attributes.s)&& strcmp(laneSections(j1).type,'driving') && laneSections(j1).id == direction
+                mLaneSection = laneSections(j1);
+                for j2 = startGeo:endGeo
+                    mGeo = Geos(j2);
+                    if mGeo.lineType == "line"
+                        linemsg = CoorGetLineSet(mGeo.x,mGeo.y,mGeo.hdg,mGeo.mlength,mLaneSection.offset,sign(mLaneSection.id));
+                        tempPlot = [tempPlot;line(ax,[linemsg.x,linemsg.x+linemsg.dx],[linemsg.y,linemsg.y+linemsg.dy],'lineWidth',5,'color','b')];                         
+                    end
 
-    %以laneSection为基准绘制下属的Geo区域
-    for i0 = 1:length(laneGeoMap)
-        crtlaneSection = laneGeoMap(i0).id;
-        crtGeos = laneGeoMap(i0).geo;
-        temp_laneSection = getSingleObject(laneSectionList,crtlaneSection);
-        lanemsg = OpenDriveGetLaneSecMsg(temp_laneSection);%车道信息
-        for i1 = 1:length(crtGeos)
-            crtgeo = getSingleObject(tempGeoList,crtGeos(i1));
-            geomsg = OpenDriveGetGeoMsg(crtgeo);
-                for i2 = 1:size(lanemsg,1)
-                    laneId = lanemsg(i2,1);
-                    offset = lanemsg(i2,2);
-                    if laneId == direction %%类似绘制整张地图(PlotMap)，这里舍弃了参考线的部分和不需要的车道部分
-                    
-                        if geomsg.lineType == "line"
-                            linemsg = CoorGetLineSet(geomsg.x,geomsg.y,geomsg.hdg,geomsg.mlength,offset,sign(laneId));
-                            tempPlot = [tempPlot;line(ax,[linemsg.x,linemsg.x+linemsg.dx],[linemsg.y,linemsg.y+linemsg.dy],'lineWidth',5,'color','b')];  
-                        end
-                        
-                        if geomsg.lineType == "arc"
-                            arcmsg = CoorGetArcSet(geomsg.x,geomsg.y,geomsg.hdg,geomsg.mlength,geomsg.curvature,offset,sign(laneId),100);
-                            tempPlot = [tempPlot;plot(ax,arcmsg.xs,arcmsg.ys,'lineWidth',5,'color','b')];
-                        end
-                        
-                        if geomsg.lineType == "spiral"
-                            spiralmsg = CoorGetSpiralSet(geomsg.x,geomsg.y,geomsg.hdg,geomsg.mlength,geomsg.curvStart,geomsg.curvEnd,offset,sign(laneId),100);
-                            tempPlot = [tempPlot;plot(ax,spiralmsg.xs,spiralmsg.ys,'lineWidth',5,'color','b')];
-                        end
-                    
-                    end    
-                end      
-        end       
-    end    
+                    if mGeo.lineType == "arc"
+                        arcmsg = CoorGetArcSet(mGeo.x,mGeo.y,mGeo.hdg,mGeo.mlength,mGeo.curvature,mLaneSection.offset,sign(mLaneSection.id),100);
+                        tempPlot = [tempPlot;plot(ax,arcmsg.xs,arcmsg.ys,'lineWidth',5,'color','b')];
+                    end
+
+                    if mGeo.lineType == "spiral"
+                        spiralmsg = CoorGetSpiralSet(mGeo.x,mGeo.y,mGeo.hdg,mGeo.mlength,mGeo.curvStart,mGeo.curvEnd,mLaneSection.offset,sign(mLaneSection.id),100);
+                        tempPlot = [tempPlot;plot(ax,spiralmsg.xs,spiralmsg.ys,'lineWidth',5,'color','b')];
+                    end
+                end
+            end
+        end
+    end     
 end
 
 
@@ -106,8 +97,7 @@ function tempPlot1 = plotRoadByCondition1(ax,mRoadObj,startPoint,endPoint)
     tempGeoList = mRoadObj.planView.geometry;
     tempGeoListSize = length(tempGeoList);    
     %　车道部分
-    laneSectionList = mRoadObj.lanes.laneSection;
-    laneSectionListSize = length(laneSectionList);     
+    laneSectionList = mRoadObj.lanes.laneSection;    
     if tempGeoListSize == 1%处理同一直线段的特殊情况
         return;
     else
@@ -125,20 +115,8 @@ function tempPlot1 = plotRoadByCondition1(ax,mRoadObj,startPoint,endPoint)
        for i = startGeoNum : endGeoNum
             crtgeo = getSingleObject(tempGeoList,i);
             geomsg = OpenDriveGetGeoMsg(crtgeo);
-            if geomsg.lineType == "line"
-                linemsg = CoorGetLineSet(geomsg.x,geomsg.y,geomsg.hdg,geomsg.mlength,startPoint.offset,startPoint.direction);
-                tempPlot1 = [tempPlot1;line(ax,[linemsg.x,linemsg.x+linemsg.dx],[linemsg.y,linemsg.y+linemsg.dy],'lineWidth',5,'color','b')];  
-            end
-
-            if geomsg.lineType == "arc"
-                arcmsg = CoorGetArcSet(geomsg.x,geomsg.y,geomsg.hdg,geomsg.mlength,geomsg.curvature,startPoint.offset,startPoint.direction,100);
-                tempPlot1 = [tempPlot1;plot(ax,arcmsg.xs,arcmsg.ys,'lineWidth',5,'color','b')];
-            end
-
-            if geomsg.lineType == "spiral"
-                spiralmsg = CoorGetSpiralSet(geomsg.x,geomsg.y,geomsg.hdg,geomsg.mlength,geomsg.curvStart,geomsg.curvEnd,startPoint.offset,startPoint.direction,100);
-                tempPlot1 = [tempPlot1;plot(ax,spiralmsg.xs,spiralmsg.ys,'lineWidth',5,'color','b')];
-            end
+            tempPlotRes = plotByPointAndGeo(startPoint,geomsg);
+            tempPlot1 = [tempPlot1;tempPlotRes];
         end
     end
   
@@ -177,24 +155,35 @@ function tempPlot1 = plotRoadByCondition2(ax,mRoadObj,Point,flag)
        for i = startGeoNum : endGeoNum
             crtgeo = getSingleObject(tempGeoList,i);
             geomsg = OpenDriveGetGeoMsg(crtgeo);
-            if geomsg.lineType == "line"
-                linemsg = CoorGetLineSet(geomsg.x,geomsg.y,geomsg.hdg,geomsg.mlength,Point.offset,Point.direction);
-                tempPlot1 = [tempPlot1;line(ax,[linemsg.x,linemsg.x+linemsg.dx],[linemsg.y,linemsg.y+linemsg.dy],'lineWidth',5,'color','b')];  
-            end
-
-            if geomsg.lineType == "arc"
-                arcmsg = CoorGetArcSet(geomsg.x,geomsg.y,geomsg.hdg,geomsg.mlength,geomsg.curvature,Point.offset,Point.direction,100);
-                tempPlot1 = [tempPlot1;plot(ax,arcmsg.xs,arcmsg.ys,'lineWidth',5,'color','b')];
-            end
-
-            if geomsg.lineType == "spiral"
-                spiralmsg = CoorGetSpiralSet(geomsg.x,geomsg.y,geomsg.hdg,geomsg.mlength,geomsg.curvStart,geomsg.curvEnd,Point.offset,Point.direction,100);
-                tempPlot1 = [tempPlot1;plot(ax,spiralmsg.xs,spiralmsg.ys,'lineWidth',5,'color','b')];
-            end
+            tempPlotRes = plotByPointAndGeo(Point,geomsg);
+            tempPlot1 = [tempPlot1;tempPlotRes];
         end
     end
   
 end
+%%根据点信息以及geo信息进行绘制
+function tempPlotRes = plotByPointAndGeo(Point,geomsg)
+    global ax;
+    tempPlotRes = [];
+    if geomsg.lineType == "line"
+        linemsg = CoorGetLineSet(geomsg.x,geomsg.y,geomsg.hdg,geomsg.mlength,Point.offset,Point.direction);
+        tempPlotRes = line(ax,[linemsg.x,linemsg.x+linemsg.dx],[linemsg.y,linemsg.y+linemsg.dy],'lineWidth',5,'color','b');  
+    end
+
+    if geomsg.lineType == "arc"
+        arcmsg = CoorGetArcSet(geomsg.x,geomsg.y,geomsg.hdg,geomsg.mlength,geomsg.curvature,Point.offset,Point.direction,100);
+        tempPlotRes = plot(ax,arcmsg.xs,arcmsg.ys,'lineWidth',5,'color','b');
+    end
+
+    if geomsg.lineType == "spiral"
+        spiralmsg = CoorGetSpiralSet(geomsg.x,geomsg.y,geomsg.hdg,geomsg.mlength,geomsg.curvStart,geomsg.curvEnd,Point.offset,Point.direction,100);
+        tempPlotRes = plot(ax,spiralmsg.xs,spiralmsg.ys,'lineWidth',5,'color','b');
+    end
+    
+end
+
+
+
 
 %%通过road id获取road实体
 function mRoadobj = getRoadobjById(road,id)

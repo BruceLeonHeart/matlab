@@ -63,7 +63,7 @@ for i = 1:1:road_num
     elseif strcmp(finalGeoMsg.lineType,'arc')
         [ROADS(id).end_x,ROADS(id).end_y] = CoorGetFinalArc(finalGeoMsg.x,finalGeoMsg.y,finalGeoMsg.hdg,finalGeoMsg.mlength,finalGeoMsg.curvature,0,0);   
     elseif strcmp(finalGeoMsg.lineType,'spiral')
-        [ROADS(id).end_x,ROADS(id).end_y] = CoorGetFinalSpiral(finalGeoMsg.x,finalGeoMsg.y,finalGeoMsg.hdg,finalGeoMsg.mlength,finalGeoMsg.curvStart,finalGeoMsg.curvEnd,offset,laneFlag);
+        [ROADS(id).end_x,ROADS(id).end_y] = CoorGetFinalSpiral(finalGeoMsg.x,finalGeoMsg.y,finalGeoMsg.hdg,finalGeoMsg.mlength,finalGeoMsg.curvStart,finalGeoMsg.curvEnd,0,0);
     end
     
     if geometry_num ==1
@@ -73,16 +73,24 @@ for i = 1:1:road_num
         ROADS(id).start_x = str2double(MAP.road{1,i}.planView.geometry{1,1}.Attributes.x);  % road起点的 x 坐标
         ROADS(id).start_y = str2double(MAP.road{1,i}.planView.geometry{1,1}.Attributes.y);  % road起点的 y 坐标  
     end
- 
+    hasRightSuc = 0;
+    if isfield(MAP.road{1,i}.link,'successor')
+        hasRightSuc = 1;
+    end
+    hasLeftSuc = 0;
+    if isfield(MAP.road{1,i}.link,'predecessor')
+        hasLeftSuc = 1;
+    end
+    
     % right successor------------------------------------------------------------
-    if strcmp(MAP.road{1,i}.link.successor.Attributes.elementType, 'road')
+    if hasRightSuc&&strcmp(MAP.road{1,i}.link.successor.Attributes.elementType, 'road')
         ROADS(id).right_successor_road_id = str2double(MAP.road{1,i}.link.successor.Attributes.elementId);
         if strcmp(MAP.road{1,i}.link.successor.Attributes.contactPoint, 'start')
             ROADS(id).right_successor_road_lane = -1;
         else
             ROADS(id).right_successor_road_lane = 1;   
         end     
-    elseif strcmp(MAP.road{1,i}.link.successor.Attributes.elementType, 'junction')
+    elseif hasRightSuc&&strcmp(MAP.road{1,i}.link.successor.Attributes.elementType, 'junction')
         junction_num = size(MAP.junction);
         junction_num = junction_num(1,2);                                   % 当前地图中junction的数量
         for m = 1:1:junction_num
@@ -109,14 +117,14 @@ for i = 1:1:road_num
     end
 
     % left successor------------------------------------------------------------
-    if strcmp(MAP.road{1,i}.link.predecessor.Attributes.elementType, 'road')
+    if hasLeftSuc&&strcmp(MAP.road{1,i}.link.predecessor.Attributes.elementType, 'road')
         ROADS(id).left_successor_road_id = str2double(MAP.road{1,i}.link.predecessor.Attributes.elementId);
         if strcmp(MAP.road{1,i}.link.predecessor.Attributes.contactPoint, 'start')
             ROADS(id).left_successor_road_lane = -1;
         else
             ROADS(id).left_successor_road_lane = 1;   
         end    
-    elseif strcmp(MAP.road{1,i}.link.predecessor.Attributes.elementType, 'junction')
+    elseif hasLeftSuc&&strcmp(MAP.road{1,i}.link.predecessor.Attributes.elementType, 'junction')
         junction_num = size(MAP.junction);
         junction_num = junction_num(1,2);                                   % 当前地图中junction的数量
         for m = 1:1:junction_num

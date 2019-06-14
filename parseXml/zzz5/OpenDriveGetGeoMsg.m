@@ -1,5 +1,5 @@
 function msg = OpenDriveGetGeoMsg(geo)
-msg = struct();
+msg = struct('s',[],'x',[],'y',[],'hdg',[],'mlength',[],'lineType',[],'curvature',[],'curvStart',[],'curvEnd',[]);
 msg.s = str2double(geo.Attributes.s);
 msg.x = str2double(geo.Attributes.x);
 msg.y = str2double(geo.Attributes.y);
@@ -14,7 +14,5 @@ elseif isfield(geo,"spiral")
     msg.lineType = "spiral";
     msg.curvStart = str2double(geo.spiral.Attributes.curvStart);
     msg.curvEnd = str2double(geo.spiral.Attributes.curvEnd);
-else
-    fprintf("unknown kind Geo");
 end
 end

@@ -1,50 +1,68 @@
-function laneGeoMap = OpenDriveUnitGeoLane(mRoadObj)
-%通过laneSection的S坐标找到对应的Geo
-%建立laneSection与geo的连接关系
- %　参考线部分
+function [Geos,laneSections,laneSecMap] = OpenDriveUnitGeoLane(mRoadObj)
+    %%将geo与laneSection分别做成结构体进行记录   
+    %　参考线部分
+    
     tempGeoList = mRoadObj.planView.geometry;
     tempGeoListSize = length(tempGeoList);
+    Geos = struct('s',[],'x',[],'y',[],'hdg',[],'mlength',[],'lineType',[],'curvature',[],'curvStart',[],'curvEnd',[]);
+    for m = 1:tempGeoListSize     
+        crtmsg = OpenDriveGetGeoMsg(getSingleObject(tempGeoList,m));
+        Geos(m) = crtmsg;
+    end 
     
-    %　车道部分
+     %　车道部分
     laneSectionList = mRoadObj.lanes.laneSection;
     laneSectionListSize = length(laneSectionList);
-    
-    % 找到laneSection与Geo的对应关系
-    laneSectionRange = [];
+    laneSections = struct('s',[],'id',[],'type',[],'offset',[],'speed',[]);
+    k = 1;
     for n = 1:laneSectionListSize
-        temp_laneSection = getSingleObject(laneSectionList,n);
-        temp_laneSection_S = str2double(temp_laneSection.Attributes.s);
-     
-        msgResult = struct();
-        for i =1:length(tempGeoList)
-            crtGeo = getSingleObject(tempGeoList,i);
-            msg = OpenDriveGetGeoMsg(crtGeo);
-            if abs(msg.s - temp_laneSection_S) < 1e-3
-                msg.id  = i;  %从上一个开始到i
-                msgResult = msg;
-                break;
-            end
+        laneSectionsMsg = OpenDriveGetLaneSecMsg1(getSingleObject(laneSectionList,n));
+        for n1 = 1 :length(laneSectionsMsg)
+            laneSections(k) = laneSectionsMsg(n1);
+            k = k + 1;
         end
-        laneSectionRange = [laneSectionRange,msgResult.id];
-    end 
-    if ~ismember(tempGeoListSize,laneSectionRange)
-        laneSectionRange = [laneSectionRange,tempGeoListSize];
     end
     
-   %%建立结构体记录对应关系
-   laneGeoMap = struct();
-    if laneSectionRange(end) == 1
-        laneGeoMap.id =  1;
-        laneGeoMap.geo = 1;
-    else
-        lsrSize = size(laneSectionRange,2);
-        for k = 1:lsrSize            
-            laneGeoMap(k).id = laneSectionRange(k);
-            if k < lsrSize
-                laneGeoMap(k).geo = laneSectionRange(k):laneSectionRange(k+1)-1;
+    %对应关系
+    laneSecMap = struct('laneSecIdx',[],'startGeoNum',[],'endGeoNum',[]);
+    for i = 1 :laneSectionListSize
+        crtlaneSec = getSingleObject(laneSectionList,i);
+        s = str2double(crtlaneSec.Attributes.s);
+        laneSecMap(i).laneSecIdx = i;
+        laneSecMap(i).startGeoNum = getUnitMsg(s,Geos);
+        laneSecMap(i).endGeoNum = tempGeoListSize;
+        if i + 1 <=laneSectionListSize
+            nextlaneSec = getSingleObject(laneSectionList,i+1);
+            s1 = str2double(nextlaneSec.Attributes.s);
+            nextStartGeoNum =  getUnitMsg(s1,Geos);
+            if  nextStartGeoNum == tempGeoListSize && tempGeoListSize ==1
+                laneSecMap(i).endGeoNum = tempGeoListSize;
             else
-                laneGeoMap(k).geo = laneSectionRange(k):laneSectionRange(end);
+                laneSecMap(i).endGeoNum = nextStartGeoNum - 1;
             end
         end
-    end    
+    end
+    
+end
+
+%当前的laneSection从geos中寻找参考信息
+function idx = getUnitMsg(s,Geos)
+    idx = 999;
+    for i = 1:length(Geos)
+%         tempS_end = Geos(i).s + Geos(i).mlength;
+        if abs( s - Geos(i).s) < 1e-3
+            idx = i;
+            return;
+        end
+    end
+    
+    for i = 1:length(Geos)
+        tempS_end = Geos(i).s + Geos(i).mlength;
+        if s >= Geos(i).s  && tempS_end > s
+            idx = i;
+            break;
+        end
+    end
+    
+    
 end

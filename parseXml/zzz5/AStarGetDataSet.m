@@ -67,65 +67,54 @@ end
 %获取完整路段数据集
 function data = getDataByDirection(mRoadObj,direction,delta_s)
     data = [];
-    %　参考线部分
-    tempGeoList = mRoadObj.planView.geometry;
-    tempGeoListSize = length(tempGeoList);
-    
-    %　车道部分
     laneSectionList = mRoadObj.lanes.laneSection;
-    laneSectionListSize = length(laneSectionList);
+    [Geos,laneSections,laneSecMap] = OpenDriveUnitGeoLane(mRoadObj);
 
-    % 　绘制车道线
-    % 找到laneSection与Geo的对应关系
-    laneGeoMap = OpenDriveUnitGeoLane(mRoadObj);
+    %车道线基于参考线
+    %laneSection中的每一个s至少对应一个geo
+    %即对任意的一个laneSection，与geo的关系是一对一或者一对多
+    %构建对应关系结构体   
+    for j =1:length(laneSecMap)
+        crtLaneSec = getSingleObject(laneSectionList,j);
+        startGeo = laneSecMap(j).startGeoNum;
+        endGeo = laneSecMap(j).endGeoNum;
+        for j1 = 1:length(laneSections)
+            if laneSections(j1).s == str2double(crtLaneSec.Attributes.s)&& strcmp(laneSections(j1).type,'driving') && laneSections(j1).id == direction
+                mLaneSection = laneSections(j1);
+                for j2 = startGeo:endGeo
+                    mGeo = Geos(j2);
+                    if mGeo.lineType == "line"
+                        linemsg = CoorGetLineSet(mGeo.x,mGeo.y,mGeo.hdg,mGeo.mlength,mLaneSection.offset,sign(mLaneSection.id));
+                        x_dataset = linspace(linemsg.x,linemsg.x+linemsg.dx,ceil(mGeo.mlength/delta_s));
+                        y_dataset = linspace(linemsg.y,linemsg.y+linemsg.dy,ceil(mGeo.mlength/delta_s));
+                        if  direction == -1
+                            data = [data;x_dataset' y_dataset'];
+                        else
+                            data = [fliplr(x_dataset)' fliplr(y_dataset)';data];
+                        end                        
+                    end
 
-    %以laneSection为基准绘制下属的Geo区域
-    for i0 = 1:length(laneGeoMap)
-        crtlaneSection = laneGeoMap(i0).id;
-        crtGeos = laneGeoMap(i0).geo;
-        temp_laneSection = getSingleObject(laneSectionList,crtlaneSection);
-        lanemsg = OpenDriveGetLaneSecMsg(temp_laneSection);%车道信息
-        for i1 = 1:length(crtGeos)
-            crtgeo = getSingleObject(tempGeoList,crtGeos(i1));
-            geomsg = OpenDriveGetGeoMsg(crtgeo);
-                for i2 = 1:size(lanemsg,1)
-                    laneId = lanemsg(i2,1);
-                    offset = lanemsg(i2,2);
-                    if laneId == direction %%类似绘制整张地图(PlotMap)，这里舍弃了参考线的部分和不需要的车道部分
-                    
-                        if geomsg.lineType == "line"
-                            linemsg = CoorGetLineSet(geomsg.x,geomsg.y,geomsg.hdg,geomsg.mlength,offset,sign(laneId));
-                            x_dataset = linspace(linemsg.x,linemsg.x+linemsg.dx,ceil(geomsg.mlength/delta_s));
-                            y_dataset = linspace(linemsg.y,linemsg.y+linemsg.dy,ceil(geomsg.mlength/delta_s));
-                            if  direction == -1
-                                data = [data;x_dataset' y_dataset'];
-                            else
-                                data = [fliplr(x_dataset)' fliplr(y_dataset)';data];
-                            end
+                    if mGeo.lineType == "arc"
+                        arcmsg = CoorGetArcSet(mGeo.x,mGeo.y,mGeo.hdg,mGeo.mlength,mGeo.curvature,mLaneSection.offset,sign(mLaneSection.id),ceil(mGeo.mlength/delta_s));
+                        if  direction == -1
+                            data = [data;arcmsg.xs' arcmsg.ys'];
+                        else
+                            data = [fliplr(arcmsg.xs)' fliplr(arcmsg.ys)';data];
                         end
-                        
-                        if geomsg.lineType == "arc"
-                            arcmsg = CoorGetArcSet(geomsg.x,geomsg.y,geomsg.hdg,geomsg.mlength,geomsg.curvature,offset,sign(laneId),ceil(geomsg.mlength/delta_s));
-                            if  direction == -1
-                                data = [data;arcmsg.xs' arcmsg.ys'];
-                            else
-                                data = [fliplr(arcmsg.xs)' fliplr(arcmsg.ys)';data];
-                            end
+                    end
+
+                    if mGeo.lineType == "spiral"
+                        spiralmsg = CoorGetSpiralSet(mGeo.x,mGeo.y,mGeo.hdg,mGeo.mlength,mGeo.curvStart,mGeo.curvEnd,mLaneSection.offset,sign(mLaneSection.id),ceil(mGeo.mlength/delta_s));
+                        if  direction == -1
+                            data = [data;spiralmsg.xs' spiralmsg.ys'];
+                        else
+                            data = [fliplr(spiralmsg.xs)' fliplr(spiralmsg.ys)';data];
                         end
-                        
-                        if geomsg.lineType == "spiral"
-                            spiralmsg = CoorGetSpiralSet(geomsg.x,geomsg.y,geomsg.hdg,geomsg.mlength,geomsg.curvStart,geomsg.curvEnd,offset,sign(laneId),ceil(geomsg.mlength/delta_s));
-                            if  direction == -1
-                                data = [data;spiralmsg.xs' spiralmsg.ys'];
-                            else
-                                data = [fliplr(spiralmsg.xs)' fliplr(spiralmsg.ys)';data];
-                            end
-                        end
-                    
-                    end    
-                end      
-        end       
-    end    
+                    end
+                end
+            end
+        end
+    end         
 end
 
 
@@ -155,6 +144,7 @@ function data = getDataByCondition1(mRoadObj,startPoint,endPoint,delta_s)
        for i = startGeoNum : endGeoNum
             crtgeo = getSingleObject(tempGeoList,i);
             geomsg = OpenDriveGetGeoMsg(crtgeo);
+            
             if geomsg.lineType == "line"
                 linemsg = CoorGetLineSet(geomsg.x,geomsg.y,geomsg.hdg,geomsg.mlength,startPoint.offset,startPoint.direction);
                 x_dataset = linspace(linemsg.x,linemsg.x+linemsg.dx,ceil(geomsg.mlength/delta_s));
