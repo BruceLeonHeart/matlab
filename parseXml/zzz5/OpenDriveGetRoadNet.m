@@ -102,7 +102,7 @@ for i = 1:1:road_num
             p = 1;
             for n = 1:1:connection_num
                 incomingRoad = str2double(MAP.junction{1,m}.connection{1,n}.Attributes.incomingRoad);
-                if incomingRoad ~= i
+                if incomingRoad ~= id
                     continue;
                 end
                 ROADS(id).right_successor_road_id(p) = str2double(MAP.junction{1,m}.connection{1,n}.Attributes.connectingRoad);
@@ -136,7 +136,7 @@ for i = 1:1:road_num
             p = 1;
             for n = 1:1:connection_num
                 incomingRoad = str2double(MAP.junction{1,m}.connection{1,n}.Attributes.incomingRoad);
-                if incomingRoad ~= i
+                if incomingRoad ~= id
                     continue;
                 end
                 ROADS(id).left_successor_road_id(p) = str2double(MAP.junction{1,m}.connection{1,n}.Attributes.connectingRoad);
