@@ -7,7 +7,7 @@ ax = ax0;
 roadObj = openDriveObj.road;
 
 for i =1:length(roadObj)
-    crtRoad = getSingleObject(roadObj,1);
+    crtRoad = getSingleObject(roadObj,2);
     fprintf("curRoad: %d \n",str2double(roadObj{1,i}.Attributes.id));
     roadParse(crtRoad);  
 end
@@ -62,9 +62,22 @@ function roadParse(mRoadObj)
      for j =1:length(laneSections)
         crtLaneSec =  laneSections(j);
         if crtLaneSec.id~=0 && strcmp(crtLaneSec.type,'driving')
-            for j1 = 1:length
+         
             msg = getlaneNearestGeo(crtLaneSec,Geos,laneSectionList);
             plotLane(crtLaneSec,msg);
+            for j1 = 1:length(laneSecMap)
+                if laneSecMap(j1).laneSecIdx == crtLaneSec.laneSecIdx
+                    if laneSecMap(j1).startGeoNum ~= laneSecMap(j1).endGeoNum
+                        startGeoNum = laneSecMap(j1).startGeoNum;
+                        endGeoNum = laneSecMap(j1).endGeoNum;
+                        for j2 = startGeoNum+1:endGeoNum
+                            crtLaneSec.s = Geos(j2).s;
+                            msg = getlaneNearestGeo(crtLaneSec,Geos,laneSectionList);
+                            plotLane(crtLaneSec,msg);
+                        end
+                    end
+                end
+            end
         end
     end
 end   
