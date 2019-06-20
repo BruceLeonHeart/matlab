@@ -7,7 +7,7 @@ ax = ax0;
 roadObj = openDriveObj.road;
 
 for i =1:length(roadObj)
-    crtRoad = getSingleObject(roadObj,i);
+    crtRoad = getSingleObject(roadObj,1);
     fprintf("curRoad: %d \n",str2double(roadObj{1,i}.Attributes.id));
     roadParse(crtRoad);  
 end
@@ -38,19 +38,33 @@ function roadParse(mRoadObj)
 %             end
 %         end
 %     end  
-    for j =1:length(laneSections)
+%     for j =1:length(laneSections)
+%         crtLaneSec =  laneSections(j);
+%         crtLaneSec_S = crtLaneSec.s;
+%         
+%         if crtLaneSec.id~=0 && strcmp(crtLaneSec.type,'driving')
+%             for j1 = 1:length(laneSecMap)
+%                 crtSecMap =  laneSecMap(j1);
+%                 if crtLaneSec.laneSecIdx == crtSecMap.laneSecIdx
+%                      startGeo = crtSecMap.startGeoNum;
+%                      endGeo = crtSecMap.endGeoNum;
+%                      for j2 = startGeo:endGeo
+%                           plotLane(crtLaneSec,Geos(j2));
+%                      end
+%                 end
+%             end
+%         end
+%     end
+
+    
+    
+
+     for j =1:length(laneSections)
         crtLaneSec =  laneSections(j);
         if crtLaneSec.id~=0 && strcmp(crtLaneSec.type,'driving')
-            for j1 = 1:length(laneSecMap)
-                crtSecMap =  laneSecMap(j1);
-                if crtLaneSec.laneSecIdx == crtSecMap.laneSecIdx
-                     startGeo = crtSecMap.startGeoNum;
-                     endGeo = crtSecMap.endGeoNum;
-                     for j2 = startGeo:endGeo
-                          plotLane(crtLaneSec,Geos(j2));
-                     end
-                end
-            end
+            for j1 = 1:length
+            msg = getlaneNearestGeo(crtLaneSec,Geos,laneSectionList);
+            plotLane(crtLaneSec,msg);
         end
     end
 end   
@@ -112,3 +126,67 @@ function plotLane(mLaneSection,mGeo)
         plot(ax,spiralmsg.xs,spiralmsg.ys,'linestyle','-');
     end
 end
+
+%%基于laneSections中最近的s值获取所属的Geo对应关系
+function msg = getlaneNearestGeo(crtLaneSec,Geos,laneSectionList)
+    msg = struct();
+
+    laneSec_S = crtLaneSec.s;
+    
+    [idx,~] = CoorGetUnitMsg(laneSec_S,Geos);   
+    if strcmp(Geos(idx).lineType,'line')
+        [x_f,y_f] = CoorGetFinalLine(Geos(idx).x,Geos(idx).y,Geos(idx).hdg,laneSec_S - Geos(idx).s ,0,sign(crtLaneSec.id));
+        msg.lineType = 'line';
+        msg.x = x_f;
+        msg.y = y_f;
+        msg.hdg = Geos(idx).hdg;
+        mlength1 = Geos(idx).s + Geos(idx).mlength - laneSec_S;
+        msg.mlength = mlength1;
+        if crtLaneSec.laneSecIdx < length(laneSectionList)
+            nextLanesec = getSingleObject(laneSectionList,crtLaneSec.laneSecIdx +1);
+            mlength2 = str2double(nextLanesec.Attributes.s) - laneSec_S;
+            msg.mlength = min(mlength1,mlength2);
+        end
+        
+        
+        
+        
+    elseif strcmp(Geos(idx).lineType,'arc')
+        [x_f,y_f] = CoorGetFinalArc(Geos(idx).x,Geos(idx).y,Geos(idx).hdg,laneSec_S - Geos(idx).s,Geos(idx).curvature,0,sign(crtLaneSec.id));
+        msg.lineType = 'arc';
+        msg.x = x_f;
+        msg.y = y_f;
+        msg.hdg = Geos(idx).hdg + (laneSec_S - Geos(idx).s) * Geos(idx).curvature;
+        mlength1 = Geos(idx).s + Geos(idx).mlength - laneSec_S;
+        msg.mlength = mlength1;
+        if crtLaneSec.laneSecIdx < length(laneSectionList)
+            nextLanesec = getSingleObject(laneSectionList,crtLaneSec.laneSecIdx +1);
+             mlength2 = str2double(nextLanesec.Attributes.s) - laneSec_S;
+            msg.mlength = min(mlength1,mlength2);
+        end
+        msg.curvature = Geos(idx).curvature;
+    elseif strcmp(Geos(idx).lineType,'spiral')
+        c = (Geos(idx).curvEnd - Geos(idx).curvStart) / Geos(idx).length;
+        cvstart = Geos(idx).curvStart + c*(laneSec_S - Geos(idx).s);
+        cvend = Geos(idx).curvStart +  c*(Geos(idx).s + Geos(idx).mlength - laneSec_S);
+        [x_f,y_f] = CoorGetFinalSpiral(Geos(idx).x,Geos(idx).y,Geos(idx).hdg,laneSec_S - Geos(idx).s,cvstart,cvend,0,sign(crtLaneSec.id));
+        msg.lineType = 'spiral';
+        msg.x = x_f;
+        msg.y = y_f;
+        msg.hdg = Geos(idx).hdg + (laneSec_S - Geos(idx).s) * cvstart + c/2.0*(laneSec_S - Geos(idx).s).^2;
+        mlength1 = Geos(idx).s + Geos(idx).mlength - laneSec_S;
+        msg.mlength = mlength1;
+        if crtLaneSec.laneSecIdx < length(laneSectionList)
+            nextLanesec = getSingleObject(laneSectionList,crtLaneSec.laneSecIdx +1);
+             mlength2 = str2double(nextLanesec.Attributes.s) - laneSec_S;
+            msg.mlength = min(mlength1,mlength2);
+        end
+        msg.curvStart = cvstart;
+        msg.curvEnd = cvend;
+    end
+    
+    if ~isempty(crtLaneSec.s_end)
+        msg.mlength = crtLaneSec.s_end - laneSec_S ;
+    end
+end
+

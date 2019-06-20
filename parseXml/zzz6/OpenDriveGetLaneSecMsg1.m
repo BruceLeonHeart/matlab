@@ -1,6 +1,6 @@
 function msg = OpenDriveGetLaneSecMsg1(laneSection)
 
-msg = struct('idx',[],'laneSecIdx',[],'s',[],'id',[],'type',[],'offset',[],'speed',[]);
+msg = struct('idx',[],'laneSecIdx',[],'s',[],'id',[],'type',[],'offset',[],'speed',[],'s_end',[]);
 idx = 0;
 s = str2double(laneSection.Attributes.s);
 if isfield(laneSection,"center")
@@ -31,7 +31,7 @@ if isfield(laneSection,"left")
                 c = str2double(crtwidths.Attributes.c);
                 d = str2double(crtwidths.Attributes.d);
                 msg(idx).offset = [a,b,c,d];
-                msg(idx).s = s + str2double(crtwidths.Attributes.sOffset); 
+                msg(idx).s = s + str2double(crtwidths.Attributes.sOffset);
                 msg(idx).id = str2double(crtlane.Attributes.id);
                 msg(idx).type = crtlane.Attributes.type;
                 if isfield(crtlane,'speed')
@@ -45,8 +45,11 @@ if isfield(laneSection,"left")
                     a = str2double(crtwidth.Attributes.a);
                     b = str2double(crtwidth.Attributes.b);
                     c = str2double(crtwidth.Attributes.c);
-                    d = str2double(crtwidth.Attributes.d);
+                    d = str2double(crtwidth.Attributes.d);                   
                     msg(idx).s = s + str2double(crtwidth.Attributes.sOffset); 
+                    if k > 1
+                        msg(idx -1).s_end =  msg(idx).s;
+                    end
                     msg(idx).id = str2double(crtlane.Attributes.id);
                     msg(idx).type = crtlane.Attributes.type;
                     if isfield(crtlane,'speed')
@@ -55,9 +58,7 @@ if isfield(laneSection,"left")
                     msg(idx).offset = [a,b,c,d];                   
                 end
             end
-        end
-
-       
+        end       
     end
 end
 
@@ -76,7 +77,7 @@ if isfield(laneSection,"right")
                 c = str2double(crtwidths.Attributes.c);
                 d = str2double(crtwidths.Attributes.d);
                 msg(idx).offset = [a,b,c,d];
-                msg(idx).s = s + str2double(crtwidths.Attributes.sOffset); 
+                msg(idx).s = s + str2double(crtwidths.Attributes.sOffset);
                 msg(idx).id = str2double(crtlane.Attributes.id);
                 msg(idx).type = crtlane.Attributes.type;
                 if isfield(crtlane,'speed')
@@ -91,7 +92,10 @@ if isfield(laneSection,"right")
                     b = str2double(crtwidth.Attributes.b);
                     c = str2double(crtwidth.Attributes.c);
                     d = str2double(crtwidth.Attributes.d);
-                    msg(idx).s = s + str2double(crtwidth.Attributes.sOffset); 
+                    msg(idx).s = s + str2double(crtwidth.Attributes.sOffset);
+                    if k > 1
+                        msg(idx -1).s_end =  msg(idx).s;
+                    end
                     msg(idx).id = str2double(crtlane.Attributes.id);
                     msg(idx).type = crtlane.Attributes.type;
                     if isfield(crtlane,'speed')

@@ -13,10 +13,11 @@ function [Geos,laneSections,laneSecMap] = OpenDriveUnitGeoLane(mRoadObj)
      %　车道部分
     laneSectionList = mRoadObj.lanes.laneSection;
     laneSectionListSize = length(laneSectionList);
-    laneSections = struct('idx',[],'laneSecIdx',[],'s',[],'id',[],'type',[],'offset',[],'speed',[]);
+    laneSections = struct('idx',[],'laneSecIdx',[],'s',[],'id',[],'type',[],'offset',[],'speed',[],'s_end',[]);
     k = 1;
     for n = 1:laneSectionListSize
         laneSectionsMsg = OpenDriveGetLaneSecMsg1(getSingleObject(laneSectionList,n));
+        
         for n1 = 1 :length(laneSectionsMsg)
             laneSections(k) = laneSectionsMsg(n1);
             laneSections(k).idx = k; %将同一Road的laneSection信息汇总，并修改idx的表达
@@ -31,40 +32,20 @@ function [Geos,laneSections,laneSecMap] = OpenDriveUnitGeoLane(mRoadObj)
         crtlaneSec = getSingleObject(laneSectionList,i);
         s = str2double(crtlaneSec.Attributes.s);
         laneSecMap(i).laneSecIdx = i;
-        laneSecMap(i).startGeoNum = getUnitMsg(s,Geos);
+        laneSecMap(i).startGeoNum = CoorGetUnitMsg(s,Geos);
         laneSecMap(i).endGeoNum = tempGeoListSize;
         if i + 1 <=laneSectionListSize
             nextlaneSec = getSingleObject(laneSectionList,i+1);
             s1 = str2double(nextlaneSec.Attributes.s);
-            nextStartGeoNum =  getUnitMsg(s1,Geos);
+            [nextStartGeoNum ,nextFlag] =  CoorGetUnitMsg(s1,Geos);
             if  nextStartGeoNum == tempGeoListSize && tempGeoListSize ==1
                 laneSecMap(i).endGeoNum = tempGeoListSize;
+            elseif nextStartGeoNum == laneSecMap(i).startGeoNum || nextFlag == -1
+                laneSecMap(i).endGeoNum = nextStartGeoNum;
             else
                 laneSecMap(i).endGeoNum = nextStartGeoNum - 1;
             end
         end
     end
-    
-end
-
-%当前的laneSection从geos中寻找参考信息
-function idx = getUnitMsg(s,Geos)
-    idx = 999;
-    for i = 1:length(Geos)
-%         tempS_end = Geos(i).s + Geos(i).mlength;
-        if abs( s - Geos(i).s) < 1e-3
-            idx = i;
-            return;
-        end
-    end
-    
-    for i = 1:length(Geos)
-        tempS_end = Geos(i).s + Geos(i).mlength;
-        if s >= Geos(i).s  && tempS_end > s
-            idx = i;
-            break;
-        end
-    end
-    
     
 end
