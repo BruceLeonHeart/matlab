@@ -6,14 +6,14 @@ global ax;
 ax = ax0;
 roadObj = openDriveObj.road;
 
-% for i =1:length(roadObj)
-%     crtRoad = getSingleObject(roadObj,i);
-%     fprintf("curRoad: %d \n",str2double(roadObj{1,i}.Attributes.id));
-%     roadParse(crtRoad);  
-% end
-   crtRoad = getSingleObject(roadObj,2);
-    fprintf("curRoad: %d \n",str2double(crtRoad.Attributes.id));
-    roadParse(crtRoad); 
+for i =1:length(roadObj)
+    crtRoad = getSingleObject(roadObj,i);
+    fprintf("curRoad: %d \n",str2double(roadObj{1,i}.Attributes.id));
+    roadParse(crtRoad);  
+end
+%    crtRoad = getSingleObject(roadObj,2);
+%     fprintf("curRoad: %d \n",str2double(crtRoad.Attributes.id));
+%     roadParse(crtRoad); 
 end
 
 function roadParse(mRoadObj)  
