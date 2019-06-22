@@ -59,11 +59,11 @@ for i = 1:1:road_num
     finalGeo = getSingleObject(MAP.road{1,i}.planView.geometry,geometry_num);
     finalGeoMsg = OpenDriveGetGeoMsg(finalGeo);
     if strcmp(finalGeoMsg.lineType,'line')
-        [ROADS(id).end_x,ROADS(id).end_y] = CoorGetFinalLine(finalGeoMsg.x,finalGeoMsg.y,finalGeoMsg.hdg,finalGeoMsg.mlength,0,0);
+        [ROADS(id).end_x,ROADS(id).end_y,~] = CoorGetFinalLine(finalGeoMsg,finalGeoMsg.mlength);
     elseif strcmp(finalGeoMsg.lineType,'arc')
-        [ROADS(id).end_x,ROADS(id).end_y] = CoorGetFinalArc(finalGeoMsg.x,finalGeoMsg.y,finalGeoMsg.hdg,finalGeoMsg.mlength,finalGeoMsg.curvature,0,0);   
+        [ROADS(id).end_x,ROADS(id).end_y,~] = CoorGetFinalArc(finalGeoMsg,finalGeoMsg.mlength);   
     elseif strcmp(finalGeoMsg.lineType,'spiral')
-        [ROADS(id).end_x,ROADS(id).end_y] = CoorGetFinalSpiral(finalGeoMsg.x,finalGeoMsg.y,finalGeoMsg.hdg,finalGeoMsg.mlength,finalGeoMsg.curvStart,finalGeoMsg.curvEnd,0,0);
+        [ROADS(id).end_x,ROADS(id).end_y,~] = CoorGetFinalSpiral(finalGeoMsg,finalGeoMsg.mlength);
     end
     
     if geometry_num ==1
@@ -205,5 +205,6 @@ for i = 1:1:road_num
     
     
 end  
+fprintf("RoadNet Created OK !");
 end
 

@@ -14,10 +14,10 @@ function  mPath = AStarMain(startPoint,endPoint,roadNet)
     openlen = openlen + 1;
     openSet(1).x = startPoint.x_e_offset; %final x
     openSet(1).y = startPoint.y_e_offset; %final y
-    openSet(1).gCost = CoorGetDis(startPoint.x_e_offset,startPoint.y_e_offset,startPoint.x_offset,startPoint.y_offset);
-    openSet(1).hCost = CoorGetDis(startPoint.x_e_offset,startPoint.y_e_offset,endPoint.x_offset,endPoint.y_offset);
+    openSet(1).gCost = CoorGetDis(startPoint.x_e_offset,startPoint.y_e_offset,startPoint.x_ref_offset,startPoint.y_ref_offset);
+    openSet(1).hCost = CoorGetDis(startPoint.x_e_offset,startPoint.y_e_offset,endPoint.x_ref_offset,endPoint.y_ref_offset);
     openSet(1).fCost = openSet(1).gCost + openSet(1).hCost;
-    openSet(1).id = startPoint.RoadNum;
+    openSet(1).id = startPoint.roadNum;
     openSet(1).direction = startPoint.direction;
     
     prev = []; %前后关系连接矩阵;col 1: road;col 2:direction

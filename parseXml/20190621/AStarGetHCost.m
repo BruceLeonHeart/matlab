@@ -9,5 +9,5 @@ function hCost = AStarGetHCost(endPoint,neighbor,roadNet)
         endy = roadNet(neighbor.id).start_y;  
     end
     %欧氏距离返回
-    hCost = CoorGetDis(endx,endy,endPoint.x_ref,endPoint.y_ref);
+    hCost = CoorGetDis(endx,endy,endPoint.x,endPoint.y);
 end
