@@ -10,6 +10,23 @@ function  mPath = AStarMain(startPoint,endPoint,roadNet)
     openSet = struct('id',[],'direction',[],'gCost',[],'hCost',[],'fCost',[],'x',[],'y',[]);
     openlen = 0;
     
+    
+      %% 如果终点落在起点与第一个要去的点中间，则直接返回
+        %包含两种情况：roadNum与GeoNum一致
+        %roadNum与GeoNum不一致
+        
+    if startPoint.RoadNum == endPoint.RoadNum && startPoint.direction == endPoint.direction
+        if startPoint.direction == -1  && startPoint.s_inGeo <=  endPoint.s_inGeo%右侧
+            mPath = [startPoint.RoadNum startPoint.direction];
+            return;
+        end
+        
+        if startPoint.direction == 1  && startPoint.s_inGeo >  endPoint.s_inGeo%左侧
+            mPath = [startPoint.RoadNum startPoint.direction];
+            return;
+        end               
+    end
+        
     %% 添加起点进入openSet
     openlen = openlen + 1;
     openSet(1).x = startPoint.x_e_offset; %final x
@@ -25,25 +42,18 @@ function  mPath = AStarMain(startPoint,endPoint,roadNet)
     
     while openlen >0
         postion = getCrtFromOpenSet(openSet,openlen);
-        current = openSet(postion);
-        
-        %% 如果终点落在起点与第一个要去的点中间，则直接返回
-        if CoorIsPointOnSeg(startPoint.x_ref_offset,startPoint.y_ref_offset,startPoint.x_e_offset,startPoint.y_e_offset,endPoint.x_ref_offset,endPoint.y_ref_offset)
-            mPath = [startPoint.roadNum startPoint.direction];
-            return;
-        end
-        
+        current = openSet(postion);       
         %% 如果终点所在road/direction已出现在OpenSet中，即便fCost当前不为最小，仍将该选择置为current，来结束搜索。
     
-        if isInSet(endPoint.roadNum,endPoint.direction,openSet)&&closelen~=0
-            current.id = endPoint.roadNum;
-            current.direction = endPoint.direction;
-        end
+%         if isInSet(endPoint.roadNum,endPoint.direction,openSet)&&closelen~=0
+%             current.id = endPoint.roadNum;
+%             current.direction = endPoint.direction;
+%         end
         
         %% 如果current　road/direction　与终点一致，则回溯路径，结束遍历
-        if current.id == endPoint.roadNum && current.direction == endPoint.direction&&closelen~=0
+        if current.id == endPoint.RoadNum && current.direction == endPoint.direction && closelen~=0
             mPath = reconstruction(current,prev,mPath);
-            mPath = [endPoint.roadNum,endPoint.direction;mPath];%添加结束点的road/direction
+            mPath = [endPoint.RoadNum,endPoint.direction;mPath];%添加结束点的road/direction
             return;
         end
         
@@ -56,21 +66,22 @@ function  mPath = AStarMain(startPoint,endPoint,roadNet)
         
         %% 遍历邻居
         NeighborSet = getNeighborSetFromRoadNet(current.id,current.direction,roadNet);
+%         if isempty(NeighborSet)
+%             continue;
+%         end
         for j = 1 :size(NeighborSet,1)
             neighbor.id = NeighborSet(j,1);
             neighbor.direction = NeighborSet(j,2);
-            
-            
+                    
                %% 如果current　road/direction　与终点一致，则回溯路径，结束遍历
-            if neighbor.id == endPoint.roadNum && neighbor.direction == endPoint.direction&&closelen~=0
+            if neighbor.id == endPoint.RoadNum && neighbor.direction == endPoint.direction&&closelen~=0
                 mPath = reconstruction(current,prev,mPath);
                 mPath = [current.id,current.direction;mPath];
-                mPath = [endPoint.roadNum,endPoint.direction;mPath];%添加结束点的road/direction
+                mPath = [endPoint.RoadNum,endPoint.direction;mPath];%添加结束点的road/direction
                 return;
             end
             
-            
-            
+                       
             if isInSet(neighbor.id,neighbor.direction,closedSet)
                 continue;
             end
