@@ -72,8 +72,11 @@ function [x_set, y_set]= getDatapathCommon(mGeos,mOffsets,RoadGeoEnd,direction,s
         %接下来的三行代码中，direction的位置应该为lane id这里因为行驶都为正负1就没有深究，后续需要考虑。
         offset = OpenDriveGetSOffset(sValueSet(j),direction,mOffsets,RoadGeoEnd);
         %取offset一半作为轨迹点
-        x = x_s + offset*cos(hdg + sign(direction)*pi/2)/2;
-        y = y_s + offset*sin(hdg + sign(direction)*pi/2)/2;
+%         x = x_s + offset*cos(hdg + sign(direction)*pi/2)/2;
+%         y = y_s + offset*sin(hdg + sign(direction)*pi/2)/2;
+        
+        x = x_s ;
+        y = y_s ;
         %坐标置为列向量
         x_set = [x_set;x];
         y_set = [y_set;y];
