@@ -156,7 +156,7 @@ for i = 1:openlen
    f(i,:) = [i , openSet(i).fCost];
 end
 f1 = sortrows(f,2);
-position = f1(1,1);
+position = f1(1,1)
 end
 
 %% 回溯矩阵获得路径
