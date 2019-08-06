@@ -1,0 +1,6 @@
+关于OpenDrive螺旋线的探索：
+    1.OpenDrive官网提供的资料
+    2.论文：Path Smoothing Using Clothoids for Differential Drive Mobile Robots
+    
+    个人认为论文中的比较实用，在应用中也得到了实现；
+    当然，这里也记录了OpenDrive官网给出的例子，并将其转换为matlab代码，但并未进行实际应用。
