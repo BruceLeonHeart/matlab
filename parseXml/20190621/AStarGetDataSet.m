@@ -67,6 +67,7 @@ function [x_set, y_set]= getDatapathCommon(mGeos,mOffsets,RoadGeoEnd,direction,s
     x_set = [];
     y_set = [];
     sValueSet = start_s:(-direction)*delta_s:end_s;
+    temp = length(sValueSet);
     for j = 1:length(sValueSet)
         [x_s,y_s,hdg] = OpenDriveGetSXY(sValueSet(j),mGeos);
         %接下来的三行代码中，direction的位置应该为lane id这里因为行驶都为正负1就没有深究，后续需要考虑。
