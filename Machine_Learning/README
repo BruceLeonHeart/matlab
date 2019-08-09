@@ -14,3 +14,5 @@ randi（iMax，m，n）在开区间（0，iMax）生成mXn型随机矩阵
 r = randi([iMin,iMax],m,n)在开区间（iMin，iMax）生成mXn型随机矩阵
 
 state 0 指的是 以后产生的随机数都与第一次运行产生的相同。
+
+机器学习实践总结：https://www.jianshu.com/p/69f6efb54a4b
